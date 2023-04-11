@@ -60,6 +60,7 @@ add_executable(${PROJECT_NAME}
     src/mesh/mesh.h
 
     util/tiny_obj_loader.h
+    util/zutils.h
     util/unsupportedeigenthing/OpenGLSupport
 )
 

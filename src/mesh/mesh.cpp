@@ -6,7 +6,7 @@
 #include <QFileInfo>
 #include <QString>
 
-#define TINYOBJLOADER_IMPLEMENTATION
+//#define TINYOBJLOADER_IMPLEMENTATION
 #include "util/tiny_obj_loader.h"
 #include "util/zutils.h"
 

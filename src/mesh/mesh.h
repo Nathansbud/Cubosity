@@ -9,7 +9,7 @@
 #include <limits>
 
 #include "Eigen/StdVector"
-#include "../geometry/halfedge.h"
+#include "./geometry/halfedge.h"
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Matrix2f);
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Matrix3f);
