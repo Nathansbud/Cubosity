@@ -21,6 +21,9 @@ public:
     GLWidget(QWidget *parent = nullptr);
     ~GLWidget();
 
+    // extra controls
+    void onSubdivideButtonClick();
+
 private:
     static const int FRAMES_TO_AVERAGE = 30;
 
@@ -69,4 +72,6 @@ private:
     bool m_rightCapture;
     SelectMode m_rightClickSelectMode;
     int m_lastSelectedVertex = -1;
+
+    bool simplifying = false;
 };

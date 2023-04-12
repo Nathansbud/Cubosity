@@ -48,14 +48,8 @@ add_executable(${PROJECT_NAME}
     src/graphics/shape.h
 
     # Mesh halfedge code
-    src/mesh/geometry/edge.cpp
-    src/mesh/geometry/edge.h
-    src/mesh/geometry/face.cpp
-    src/mesh/geometry/face.h
     src/mesh/geometry/halfedge.cpp
     src/mesh/geometry/halfedge.h
-    src/mesh/geometry/vertex.cpp
-    src/mesh/geometry/vertex.h
     src/mesh/mesh.cpp
     src/mesh/mesh.h
 

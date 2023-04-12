@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/shape.h"
+#include "mesh/mesh.h"
 #include "Eigen/StdList"
 #include "Eigen/StdVector"
 #include "Eigen/Sparse"
@@ -38,11 +39,16 @@ private:
     // Sal Khan to the rescue to solve our issues
     Eigen::SimplicialLLT<Eigen::SparseMatrix<float>> sal;
 
+
     const int NUM_ITERATIONS = 4;
 public:
     ARAP();
 
+    Mesh mesh;
+    void subdivide();
+
     void init(Eigen::Vector3f &min, Eigen::Vector3f &max);
+    void computeAdjacency();
     void move(int vertex, Eigen::Vector3f pos);
 
     // update sparse matrix L and corresponding decomp

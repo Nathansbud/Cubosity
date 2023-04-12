@@ -18,11 +18,11 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
     vector<Vector3i> triangles;
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Krong: Interactive ARAP");
+    parser.setApplicationDescription("Stamortack: Interactive Cubosity Generator");
     parser.addHelpOption();
     parser.process(*QCoreApplication::instance());
     if(parser.positionalArguments().length() < 1) {
-        std::cerr << "Krong requires a valid trimesh in .obj format!" << std::endl;
+        std::cerr << "Stamortack requires a valid trimesh in .obj format!" << std::endl;
         exit(1);
     }
 
@@ -34,45 +34,10 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
         this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
         this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
         this->cached_positions = vertices;
+        this->mesh.initFromVectors(vertices, triangles);
 
-        vector<bool> initialized(vertices.size(), false);
-
-        for(int i = 0; i < triangles.size(); i++) {
-            const auto& tri = triangles[i];
-            for(int v = 0; v < 3; v++) {
-                int vert = tri[v];
-                int nextVert = tri[(v + 1) % 3];
-                int lastVert = tri[(v + 2) % 3];
-                if(initialized[vert]) {
-                    // neighbor vertices and their wing vertices, as we need to compute cotangent angles
-                    auto& av = this->adj[vert];
-                    if(av.contains(nextVert)) {
-                        av[nextVert].second = lastVert;
-                    } else {
-                        av[nextVert].first = lastVert;
-                    }
-
-                    if(av.contains(lastVert)) {
-                        av[lastVert].second = nextVert;
-                    } else {
-                        av[lastVert].first = nextVert;
-                    }
-                } else {
-                    // first tri encountered with this vert, so adjacencies are:
-                    // {nextVert, lastVert} for verts, {i} for tris
-                    this->adj[vert] = {
-                        // every edge is shared by exactly 2 faces, so we need to find the other wing
-                        // vert; we are guaranteed to see this later
-                        {{nextVert, {lastVert, -1}},
-                         {lastVert, {nextVert, -1}}}
-                    };
-
-                    initialized[vert] = true;
-                }
-            }
-        }
-
-        m_shape.init(vertices, triangles);
+        this->m_shape.init(vertices, triangles);
+        this->computeAdjacency();
     }
 
     // Students, please don't touch this code: get min and max for viewport stuff
@@ -84,6 +49,53 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
 
     coeffMin = all_vertices.colwise().minCoeff();
     coeffMax = all_vertices.colwise().maxCoeff();
+}
+
+void ARAP::computeAdjacency() {
+    const vector<Vector3f>& vertices = m_shape.getVertices();
+    const vector<Vector3i>& faces = m_shape.getFaces();
+
+    this->adj.clear();
+    this->adj.resize(vertices.size());
+    vector<bool> initialized(vertices.size(), false);
+
+    for(int i = 0; i < faces.size(); i++) {
+        const auto& tri = faces[i];
+        for(int v = 0; v < 3; v++) {
+            cout << v << endl;
+            int vert = tri[v];
+            int nextVert = tri[(v + 1) % 3];
+            int lastVert = tri[(v + 2) % 3];
+            if(initialized[vert]) {
+                // neighbor vertices and their wing vertices, as we need to compute cotangent angles
+                auto& av = this->adj[vert];
+                if(av.contains(nextVert)) {
+                    av[nextVert].second = lastVert;
+                } else {
+                    av[nextVert].first = lastVert;
+                }
+
+                if(av.contains(lastVert)) {
+                    av[lastVert].second = nextVert;
+                } else {
+                    av[lastVert].first = nextVert;
+                }
+
+            } else {
+                // first tri encountered with this vert, so adjacencies are:
+                // {nextVert, lastVert} for verts, {i} for tris
+                this->adj[vert] = {
+                    // every edge is shared by exactly 2 faces, so we need to find the other wing
+                    // vert; we are guaranteed to see this later
+                    {{nextVert, {lastVert, -1}},
+                     {lastVert, {nextVert, -1}}}
+                };
+
+                initialized[vert] = true;
+            }
+        }
+        cout << endl;
+    }
 }
 
 void ARAP::precompute() {
@@ -190,10 +202,8 @@ void ARAP::computeSystem() {
     }
 
     this->sal.compute(this->L);
-    if(this->sal.info() != Eigen::Success) {
-        std::cout << "SHIT FUCKED HOMESLICE" << std::endl;
-    } else {
-        std::cout << "Call that a Chillesky solver" << std::endl;
+    if (this->sal.info() != Eigen::Success) {
+        std::cout << "Error: Solver could not compute" << std::endl;
     }
 }
 
@@ -249,4 +259,18 @@ void ARAP::move(int vertex, Vector3f targetPosition) {
     }
 
     m_shape.setVertices(new_vertices);
+}
+
+void ARAP::subdivide() {
+    mesh.subdivide();
+
+    const vector<Vector3f>& vertices = mesh.getVertices();
+    const vector<Vector3i>& faces = mesh.getFaces();
+
+    m_shape.init(vertices, faces);
+    computeAdjacency();
+    this->remap = vector<int>(vertices.size());
+    this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+    this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+    this->cached_positions = vertices;
 }

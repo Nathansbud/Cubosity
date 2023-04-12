@@ -287,6 +287,10 @@ void GLWidget::keyReleaseEvent(QKeyEvent *event)
     }
 }
 
+void GLWidget::onSubdivideButtonClick() {
+    m_arap.subdivide();
+}
+
 // ================== Physics Tick
 
 void GLWidget::tick()
