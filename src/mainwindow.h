@@ -23,5 +23,12 @@ private:
     void addPushButton(QBoxLayout *layout, QString text, auto function);
     void addCheckBox(QBoxLayout *layout, QString text, bool value, auto function);
 
+    // Subdivision
     void onSubdivideButtonClick();
+
+    // Denoising
+    void onDenoiseButtonClick();
+    void onDenoiseDistanceChange(double);
+    void onDenoiseSig1Change(double);
+    void onDenoiseSig2Change(double);
 };

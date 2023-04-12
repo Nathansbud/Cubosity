@@ -18,7 +18,7 @@ public:
     void saveToFile(const std::string &filePath);
 
     void subdivide();
-    void denoise();
+    void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);
     void simplify(const int n);
 
     const std::vector<Eigen::Vector3f>& getVertices() {

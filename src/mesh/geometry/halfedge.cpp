@@ -8,6 +8,8 @@
 #include <iostream>
 #include <queue>
 
+#define SHOULD_VALIDATE 1
+
 void HalfEdge::fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std::vector<Eigen::Vector3i>& faces, std::unordered_set<HalfEdge*>& halfEdges) {
     std::vector<Vertex*> verts(vertices.size(), NULL);
     std::map<std::tuple<Vertex*, Vertex*>, Edge*> edges;
@@ -151,6 +153,9 @@ void HalfEdge::deleteMesh(std::unordered_set<HalfEdge*>& mesh) {
 }
 
 void HalfEdge::validate(const std::unordered_set<HalfEdge*>& halfEdges) {
+    // If all our mesh operations are implemented correctly, we shouldn't need to validate;
+    // hence, make it a no-op if SHOULD_VALIDATE is off
+#if(SHOULD_VALIDATE)
     std::unordered_map<Face*, int> faceCount;
     std::unordered_map<Edge*, int> edgeCount;
     std::unordered_map<Vertex*, int> vertexCount;
@@ -230,6 +235,7 @@ void HalfEdge::validate(const std::unordered_set<HalfEdge*>& halfEdges) {
 
     Q_ASSERT(vertexCount.size() + faceCount.size() - 2 == edgeCount.size()); // Euler's characteristic (from Slack)
     Q_ASSERT((float) edgeCount.size() == 1.5 * faceCount.size()); // Zack's response
+#endif
 }
 
 int HalfEdge::degree(const Vertex* vertex) {
@@ -722,13 +728,15 @@ void HalfEdge::subdivide(const std::unordered_set<HalfEdge*>& originalMesh, std:
     validate(subdividedMesh);
 }
 
-void HalfEdge::denoise(const std::unordered_set<HalfEdge*>& originalMesh, std::unordered_set<HalfEdge*>& denoisedMesh) {
+void HalfEdge::denoise(
+    const std::unordered_set<HalfEdge*>& originalMesh,
+    std::unordered_set<HalfEdge*>& denoisedMesh,
+    const float DIST_THRESH,
+    const float SIGMA_C,
+    const float SIGMA_S
+) {
     DuplicateInfo di;
     duplicate(originalMesh, denoisedMesh, di);
-
-    const float DIST_THRESH = 2.f;
-    const float SIGMA_C = 1.f;
-    const float SIGMA_S = 1.f;
 
     for (auto const& [oldVert, duplicatedVert] : di.oldVertToNewVert) {
         std::unordered_set<Vertex*> neighbors;
@@ -944,8 +952,8 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
 
 
         curTriangles -= 2;
-        std::cout << curTriangles << std::endl;
+//        std::cout << curTriangles << std::endl;
     }
 
-    std::cout << curTriangles << std::endl;
+//    std::cout << curTriangles << std::endl;
 }

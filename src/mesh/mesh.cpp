@@ -107,9 +107,9 @@ void Mesh::subdivide() {
     HalfEdge::toVerts(_halfEdges, _vertices, _faces);
 }
 
-void Mesh::denoise() {
+void Mesh::denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S) {
     std::unordered_set<HalfEdge::HalfEdge*> denoisedMesh;
-    HalfEdge::denoise(_halfEdges, denoisedMesh);
+    HalfEdge::denoise(_halfEdges, denoisedMesh, DIST_THRESH, SIGMA_C, SIGMA_S);
 
     HalfEdge::deleteMesh(_halfEdges);
 

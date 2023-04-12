@@ -15,6 +15,14 @@ class Shader;
 using Vindex = int;
 using Neighbors = std::map<Vindex, std::pair<Vindex, Vindex>>;
 
+// Mesh/ARAP parameter settings controllable via UI;
+// these live in GLwidget to make passing down a little bit less annoying
+struct Settings {
+    float denoiseDistance = 2.f;
+    float denoiseSigma1 = 1.f;
+    float denoiseSigma2 = 1.f;
+};
+
 class ARAP
 {
 private:
@@ -39,13 +47,13 @@ private:
     // Sal Khan to the rescue to solve our issues
     Eigen::SimplicialLLT<Eigen::SparseMatrix<float>> sal;
 
-
     const int NUM_ITERATIONS = 4;
 public:
     ARAP();
 
     Mesh mesh;
     void subdivide();
+    void denoise(Settings&);
 
     void init(Eigen::Vector3f &min, Eigen::Vector3f &max);
     void computeAdjacency();

@@ -62,7 +62,6 @@ void ARAP::computeAdjacency() {
     for(int i = 0; i < faces.size(); i++) {
         const auto& tri = faces[i];
         for(int v = 0; v < 3; v++) {
-            cout << v << endl;
             int vert = tri[v];
             int nextVert = tri[(v + 1) % 3];
             int lastVert = tri[(v + 2) % 3];
@@ -94,7 +93,6 @@ void ARAP::computeAdjacency() {
                 initialized[vert] = true;
             }
         }
-        cout << endl;
     }
 }
 
@@ -273,4 +271,9 @@ void ARAP::subdivide() {
     this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
     this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
     this->cached_positions = vertices;
+}
+
+void ARAP::denoise(Settings& s) {
+    mesh.denoise(s.denoiseDistance, s.denoiseSigma1, s.denoiseSigma2);
+    m_shape.setVertices(mesh.getVertices());
 }

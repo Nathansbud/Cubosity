@@ -21,9 +21,11 @@ public:
     GLWidget(QWidget *parent = nullptr);
     ~GLWidget();
 
-    // extra controls
-    void onSubdivideButtonClick();
+    // extra controls, dispatching to mesh/ARAP
+    void subdivide();
+    void denoise();
 
+    Settings settings;
 private:
     static const int FRAMES_TO_AVERAGE = 30;
 

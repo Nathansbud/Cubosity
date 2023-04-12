@@ -89,7 +89,13 @@ namespace HalfEdge {
 
     void subdivide(const std::unordered_set<HalfEdge*>& originalMesh, std::unordered_set<HalfEdge*>& subdividedMesh);
 
-    void denoise(const std::unordered_set<HalfEdge*>& originalMesh, std::unordered_set<HalfEdge*>& denoisedMesh);
+    void denoise(
+        const std::unordered_set<HalfEdge*>& originalMesh,
+        std::unordered_set<HalfEdge*>& denoisedMesh,
+        const float DIST_THRESH,
+        const float SIGMA_C,
+        const float SIGMA_S
+    );
 
     Eigen::Matrix4f quadric(const Vertex* vertex);
     void updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::multimap<float, std::tuple<Edge*, Eigen::Vector3f>>& errorToEdge, std::unordered_map<Edge*, float>& edgeToError);
