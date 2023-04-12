@@ -275,5 +275,14 @@ void ARAP::subdivide() {
 
 void ARAP::denoise(Settings& s) {
     mesh.denoise(s.denoiseDistance, s.denoiseSigma1, s.denoiseSigma2);
-    m_shape.setVertices(mesh.getVertices());
+
+    const vector<Vector3f>& vertices = mesh.getVertices();
+    const vector<Vector3i>& faces = mesh.getFaces();
+
+    m_shape.init(vertices, faces);
+    computeAdjacency();
+    this->remap = vector<int>(vertices.size());
+    this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+    this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+    this->cached_positions = vertices;
 }
