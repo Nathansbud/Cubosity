@@ -15,6 +15,15 @@ public:
 private:
     GLWidget *glWidget;
 
+    // Keep layouts available to modify
+    QHBoxLayout* hLayout;
+    QVBoxLayout* vLayout;
+    QVBoxLayout* rotLayout;
+
+    QVBoxLayout* orientLayout;
+
+    void addOrientationGroup();
+
     void addHeading(QBoxLayout *layout, QString text);
     void addLabel(QBoxLayout *layout, QString text);
     void addRadioButton(QBoxLayout *layout, QString text, bool value, auto function);
