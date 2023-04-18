@@ -8,13 +8,24 @@
 #include <iostream>
 #include <queue>
 
+using namespace Eigen;
+
 #define SHOULD_VALIDATE 1
 
-void HalfEdge::fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std::vector<Eigen::Vector3i>& faces, std::unordered_set<HalfEdge*>& halfEdges) {
+void HalfEdge::fromVerts(
+    const std::vector<Eigen::Vector3f>& vertices,
+    const std::vector<Eigen::Vector3i>& faces,
+    std::unordered_set<HalfEdge*>& halfEdges,
+    GeomID& geomIDs
+) {
     std::vector<Vertex*> verts(vertices.size(), NULL);
     std::map<std::tuple<Vertex*, Vertex*>, Edge*> edges;
 
-    for (const Eigen::Vector3i& face: faces) {
+    int FID = 0, VID = 0, EID = 0;
+
+    for(; FID < faces.size(); FID++) {
+        const Vector3i& face = faces[FID];
+
         // populate the face half edges
         HalfEdge* faceHalfEdges[3];
         for (int i = 0; i < 3; i++) {
@@ -39,6 +50,7 @@ void HalfEdge::fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std
             } else {
                 // create new vertex
                 curVertex = new Vertex();
+                curVertex->vid = VID++;
                 curVertex->point = vertices[curVertexIndex];
                 curVertex->halfEdge = faceHalfEdges[i];
 
@@ -66,6 +78,7 @@ void HalfEdge::fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std
                 curEdge->halfEdge->twin = faceHalfEdges[i];
             } else {
                 curEdge = new Edge();
+                curEdge->eid = EID++;
                 curEdge->halfEdge = faceHalfEdges[i];
 
                 edges.insert({ { curVertex, nextVertex }, curEdge });
@@ -76,11 +89,18 @@ void HalfEdge::fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std
 
         // populate the faces
         Face* curFace = new Face();
+        curFace->fid = FID;
+
         curFace->halfEdge = faceHalfEdges[0];
         for (int i = 0; i < 3; i++) {
             faceHalfEdges[i]->face = curFace;
         }
     }
+
+    // Assign our max ID
+    geomIDs.EID_MAX = EID;
+    geomIDs.FID_MAX = FID;
+    geomIDs.VID_MAX = VID;
 }
 
 void HalfEdge::toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces) {
@@ -521,6 +541,9 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
     cci.rightOutbound.erase(halfEdge->twin);
 
     Vertex* collapsedVertex = new Vertex();
+
+    // this isn't really a new vertex, so always choose left to be its maker
+    collapsedVertex->vid = left->vid;
     collapsedVertex->point = collapsePoint;
     collapsedVertex->halfEdge = halfEdge->next->next->twin;
     ci.collapsedVertex = collapsedVertex;
@@ -856,8 +879,6 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
         auto [error, edgeAndPoint] = *errorToEdge.begin();
         auto [edge, collapsePoint] = edgeAndPoint;
 
-//        std::cout << collapsePoint << std::endl;
-
         CollapseInfo ci;
         if(!collapse(edge, collapsePoint, ci, mesh)) {
             break;
@@ -952,8 +973,5 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
 
 
         curTriangles -= 2;
-//        std::cout << curTriangles << std::endl;
     }
-
-//    std::cout << curTriangles << std::endl;
 }

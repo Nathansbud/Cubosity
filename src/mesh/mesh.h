@@ -13,7 +13,7 @@ public:
 
     void initFromVectors(const std::vector<Eigen::Vector3f> &vertices,
                          const std::vector<Eigen::Vector3i> &faces);
-
+    // why no work
     void loadFromFile(const std::string &filePath);
     void saveToFile(const std::string &filePath);
 
@@ -24,6 +24,7 @@ public:
     const std::vector<Eigen::Vector3f>& getVertices() {
         return _vertices;
     }
+
     const std::vector<Eigen::Vector3i>& getFaces() {
         return _faces;
     }
@@ -32,4 +33,6 @@ private:
     std::vector<Eigen::Vector3f> _vertices;
     std::vector<Eigen::Vector3i> _faces;
     std::unordered_set<HalfEdge::HalfEdge*> _halfEdges;
+
+    HalfEdge::GeomID _geomID;
 };

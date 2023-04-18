@@ -19,6 +19,14 @@ namespace HalfEdge {
         Vertex* vertex;
         Edge* edge;
         Face* face;
+        int hid = -1;
+    };
+
+    struct GeomID {
+        int VID_MAX = -1;
+        int EID_MAX = -1;
+        int FID_MAX = -1;
+        int HID_MAX = -1;
     };
 
     struct Vertex {
@@ -26,17 +34,20 @@ namespace HalfEdge {
 
         HalfEdge* halfEdge;
         Eigen::Vector3f point;
+        int vid = -1;
     };
 
     struct Edge {
         HalfEdge* halfEdge;
+        int eid = -1;
     };
 
     struct Face {
         HalfEdge* halfEdge;
+        int fid = -1;
     };
 
-    void fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std::vector<Eigen::Vector3i>& faces, std::unordered_set<HalfEdge*>& halfEdges);
+    void fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std::vector<Eigen::Vector3i>& faces, std::unordered_set<HalfEdge*>& halfEdges, GeomID& geom_ids);
     void toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces);
     void deleteMesh(std::unordered_set<HalfEdge*>& mesh);
     void validate(const std::unordered_set<HalfEdge*>& halfEdges);

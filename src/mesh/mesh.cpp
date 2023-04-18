@@ -19,7 +19,8 @@ void Mesh::initFromVectors(const vector<Vector3f> &vertices,
     _vertices = vertices;
     _faces    = faces;
 
-    HalfEdge::fromVerts(_vertices, _faces, _halfEdges);
+    HalfEdge::fromVerts(_vertices, _faces, _halfEdges, _geomID);
+    cout << "Max IDs: " << _geomID.VID_MAX << "V, " << _geomID.FID_MAX << "F, " << _geomID.EID_MAX << "E" << endl;
 }
 
 void Mesh::loadFromFile(const string &filePath)
@@ -63,10 +64,11 @@ void Mesh::loadFromFile(const string &filePath)
         _vertices.emplace_back(attrib.vertices[i], attrib.vertices[i + 1], attrib.vertices[i + 2]);
     }
 
-    HalfEdge::fromVerts(_vertices, _faces, _halfEdges);
+    HalfEdge::fromVerts(_vertices, _faces, _halfEdges, _geomID);
     HalfEdge::validate(_halfEdges);
 
     cout << "Loaded " << _faces.size() << " faces and " << _vertices.size() << " vertices" << endl;
+    cout << "Max IDs: " << _geomID.VID_MAX << "V, " << _geomID.FID_MAX << "F, " << _geomID.EID_MAX << "E" << endl;
 }
 
 void Mesh::saveToFile(const string &filePath)
