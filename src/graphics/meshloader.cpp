@@ -18,7 +18,7 @@ using namespace Eigen;
 
 MeshLoader::MeshLoader() {}
 
-bool MeshLoader::loadTriMesh(const string &filePath, vector<Vector3f> &vertices, vector<Vector3i> &faces)
+bool MeshLoader::loadTriMesh(const string &filePath, vector<Vector3f> &vertices, vector<Vector3i> &faces, vector<Vector2f> &uv, string& texture)
 {
     tinyobj::attrib_t attrib;
     vector<tinyobj::shape_t> shapes;
@@ -43,16 +43,23 @@ bool MeshLoader::loadTriMesh(const string &filePath, vector<Vector3f> &vertices,
             unsigned int fv = shapes[s].mesh.num_face_vertices[f];
 
             Vector3i face;
+
             for (size_t v = 0; v < fv; v++) {
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
                 face[v] = idx.vertex_index;
 
+                uv.push_back({ attrib.texcoords[2*size_t(idx.texcoord_index)+0], attrib.texcoords[2*size_t(idx.texcoord_index)+1] });
             }
             faces.push_back(face);
 
             index_offset += fv;
         }
+    }
+
+    texture.erase();
+    if (materials.size() > 0) {
+        texture.append(materials[0].diffuse_texname);
     }
 
     for (size_t i = 0; i < attrib.vertices.size(); i += 3) {

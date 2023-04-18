@@ -51,6 +51,7 @@ GLWidget::~GLWidget()
 {
     if (m_defaultShader != nullptr) delete m_defaultShader;
     if (m_pointShader   != nullptr) delete m_pointShader;
+    if (m_textureShader   != nullptr) delete m_textureShader;
 }
 
 // ================== Basic OpenGL Overrides
@@ -74,6 +75,7 @@ void GLWidget::initializeGL()
     // Initialize shaders
     m_defaultShader = new Shader(":resources/shaders/shader.vert",      ":resources/shaders/shader.frag");
     m_pointShader   = new Shader(":resources/shaders/anchorPoint.vert", ":resources/shaders/anchorPoint.geom", ":resources/shaders/anchorPoint.frag");
+    m_textureShader = new Shader(":resources/shaders/texture.vert",     ":resources/shaders/texture.frag");
 
     // Initialize ARAP, and get parameters needed to decide the camera position, etc
     Vector3f coeffMin, coeffMax;
@@ -111,11 +113,20 @@ void GLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_defaultShader->bind();
-    m_defaultShader->setUniform("proj", m_camera.getProjection());
-    m_defaultShader->setUniform("view", m_camera.getView());
-    m_arap.draw(m_defaultShader, GL_TRIANGLES);
-    m_defaultShader->unbind();
+    if (m_arap.isTextured()) {
+        m_textureShader->bind();
+        m_textureShader->setUniform("proj", m_camera.getProjection());
+        m_textureShader->setUniform("view", m_camera.getView());
+        m_arap.draw(m_textureShader, GL_TRIANGLES);
+        m_textureShader->unbind();
+    } else {
+        m_defaultShader->bind();
+        m_defaultShader->setUniform("proj", m_camera.getProjection());
+        m_defaultShader->setUniform("view", m_camera.getView());
+        m_arap.draw(m_defaultShader, GL_TRIANGLES);
+        m_defaultShader->unbind();
+    }
+
 
     glClear(GL_DEPTH_BUFFER_BIT);
 
