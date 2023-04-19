@@ -76,7 +76,14 @@ void MainWindow::onDenoiseSig1Change(double s) { glWidget->settings.denoiseSigma
 void MainWindow::onDenoiseSig2Change(double s) { glWidget->settings.denoiseSigma2 = s; }
 
 void MainWindow::addOrientationGroup() {
-    orientLayout->addWidget(new OrientationGroup());
+    OrientationGroup* ng = new OrientationGroup();
+    glWidget->settings.orientationGroups.insert({ng->groupID, {
+        .lambda = ng->lambda->value(),
+        .color = ng->color,
+        .rotation = ng->rotation
+    }});
+
+    orientLayout->addWidget(ng);
 }
 
 void MainWindow::addHeading(QBoxLayout* layout, QString text) {

@@ -7,6 +7,7 @@
 #include <QDoubleSpinBox>
 #include <QString>
 #include <QColorDialog>
+#include <Eigen/Dense>
 
 #include <iostream>
 
@@ -17,14 +18,18 @@ public:
     QHBoxLayout* contents;
     QPushButton* colorButton;
     QDoubleSpinBox* lambda;
+    Eigen::Matrix3f rotation;
 
-    QColor originalColor;
+    QColor color;
+    int groupID;
+
+    inline static int nextID = 0;
 
     OrientationGroup(QWidget *parent = nullptr) {
-        this->originalColor = QColor::fromRgb(rand() % 255 + 1, rand() % 255 + 1, rand() % 255 + 1);
+        this->color = QColor::fromRgb(rand() % 255 + 1, rand() % 255 + 1, rand() % 255 + 1);
         this->colorButton = new QPushButton("");
         this->colorButton->setStyleSheet(
-            QString("background-color: %1; border: none;").arg(originalColor.name())
+            QString("background-color: %1; border: none;").arg(color.name())
         );
 
         this->lambda = UIUtil::makeDoubleSpinBox(0.1, 10, 0.1, 1.0, 1);
@@ -39,10 +44,13 @@ public:
             this->colorButton->setStyleSheet(
                 QString("background-color: %1; border: none;").arg(ret.name())
             );
+            this->color = ret;
         });
 
         connect(this->lambda, &QDoubleSpinBox::valueChanged, this, [&](double v) {
             std::cout << "i cbf to deal with wiring all this up rn" << std::endl;
         });
+
+        this->groupID = nextID++;
     }
 };
