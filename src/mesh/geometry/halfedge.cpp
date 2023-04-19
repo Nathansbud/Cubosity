@@ -843,14 +843,16 @@ void HalfEdge::updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::
     }
 }
 
-void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriangles) {
+void HalfEdge::simplify(
+    std::unordered_set<HalfEdge*>& mesh,
+    const int numTriangles,
+    CollapseSequence& colSeq
+) {
     std::unordered_map<Vertex*, Eigen::Matrix4f> vertToQuadric;
     std::unordered_set<Face*> faces;
 
     std::multimap<float, std::tuple<Edge*, Eigen::Vector3f>> errorToEdge;
     std::unordered_map<Edge*, float> edgeToError;
-
-    std::vector<CollapseRecord> collapses;
 
     for (HalfEdge* he : mesh) {
         if (!faces.contains(he->face)) {
@@ -884,6 +886,8 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
     }
 
     int curTriangles = faces.size();
+    colSeq.initialFaceResolution = curTriangles;
+
     while (curTriangles > numTriangles) {
         auto [error, edgeAndPoint] = *errorToEdge.begin();
         auto [edge, collapsePoint] = edgeAndPoint;
@@ -999,12 +1003,9 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
             cur = cur->twin->next;
         } while (cur != start);
 
-        collapses.push_back(cr);
+        colSeq.collapses.push_back(cr);
         curTriangles -= 2;
     }
 
-    std::cout << "Removal Sequence: " << std::endl;
-    for(int i = 0; i < collapses.size(); i++) {
-        std::cout << collapses[i].removedOrigin.vid << std::endl;
-    }
+    colSeq.finalFaceResolution = curTriangles;
 }

@@ -118,5 +118,10 @@ void Mesh::denoise(const float DIST_THRESH, const float SIGMA_C, const float SIG
 }
 
 void Mesh::simplify(const int n) {
-    HalfEdge::simplify(_halfEdges, n);
+    HalfEdge::CollapseSequence cs;
+    HalfEdge::simplify(_halfEdges, n, cs);
+
+    std::cout << "Started With: " << cs.initialFaceResolution << " faces" << std::endl;
+    std::cout << "Collapses: " << cs.collapses.size() << std::endl;
+    std::cout << "Ended With: " << cs.finalFaceResolution << " faces" << std::endl;
 }

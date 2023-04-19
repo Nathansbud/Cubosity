@@ -85,13 +85,6 @@ namespace HalfEdge {
         std::unordered_set<Vertex*> deletedVertices;
     };
 
-    // For progressive meshes, we need to be able to walk back the sequence of collapses
-    struct CollapseRecord {
-        Vertex removedOrigin;
-        Vertex shiftedOrigin;
-        std::vector<Edge> removedEdges;
-    };
-
     bool collapse(Edge* edge, const Eigen::Vector3f& collapsePoint, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
     bool collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
 
@@ -117,5 +110,19 @@ namespace HalfEdge {
 
     Eigen::Matrix4f quadric(const Vertex* vertex);
     void updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::multimap<float, std::tuple<Edge*, Eigen::Vector3f>>& errorToEdge, std::unordered_map<Edge*, float>& edgeToError);
-    void simplify(std::unordered_set<HalfEdge*>& originalMesh, const int numTriangles);
+
+    // For progressive meshes, we need to be able to walk back the sequence of collapses
+    struct CollapseRecord {
+        Vertex removedOrigin;
+        Vertex shiftedOrigin;
+        std::vector<Edge> removedEdges;
+    };
+
+    struct CollapseSequence {
+        std::vector<CollapseRecord> collapses;
+        int initialFaceResolution;
+        int finalFaceResolution;
+    };
+
+    void simplify(std::unordered_set<HalfEdge*>& originalMesh, const int numTriangles, CollapseSequence& colSeq);
 };
