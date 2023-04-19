@@ -25,6 +25,7 @@ private:
 
     // Simplification
     void onSimplifyButtonClick();
+    void onSimplifyTargetChange(int);
 
     // Subdivision
     void onSubdivideButtonClick();

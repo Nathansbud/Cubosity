@@ -29,6 +29,7 @@ MainWindow::MainWindow()
     QGroupBox* simpBox = new QGroupBox("Simplify");
     QHBoxLayout* simpLayout = new QHBoxLayout();
 
+    addSpinBox(simpLayout, "", 4, 10000000, 1, glWidget->settings.simplifyTarget, &MainWindow::onSimplifyTargetChange);
     addPushButton(simpLayout, "Simplify", &MainWindow::onSimplifyButtonClick);
     simpBox->setLayout(simpLayout);
 
@@ -45,7 +46,6 @@ MainWindow::MainWindow()
     addPushButton(vLayout, "Subdivide", &MainWindow::onSubdivideButtonClick);
     vLayout->addWidget(simpBox);
     vLayout->addWidget(denoiseBox);
-
 }
 
 MainWindow::~MainWindow()
@@ -54,6 +54,7 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::onSimplifyButtonClick() { glWidget->simplify(); }
+void MainWindow::onSimplifyTargetChange(int f) { glWidget->settings.simplifyTarget = f; }
 
 void MainWindow::onSubdivideButtonClick() { glWidget->subdivide(); }
 

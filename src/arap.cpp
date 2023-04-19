@@ -290,5 +290,15 @@ void ARAP::denoise(Settings& s) {
 
 
 void ARAP::simplify(Settings& s) {
-    mesh.simplify(10);
+    mesh.simplify(s.simplifyTarget);
+
+    const vector<Vector3f>& vertices = mesh.getVertices();
+    const vector<Vector3i>& faces = mesh.getFaces();
+
+    m_shape.init(vertices, faces);
+    computeAdjacency();
+    this->remap = vector<int>(vertices.size());
+    this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+    this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+    this->cached_positions = vertices;
 }

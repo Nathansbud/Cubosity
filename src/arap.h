@@ -18,6 +18,8 @@ using Neighbors = std::map<Vindex, std::pair<Vindex, Vindex>>;
 // Mesh/ARAP parameter settings controllable via UI;
 // these live in GLwidget to make passing down a little bit less annoying
 struct Settings {
+    int simplifyTarget = 500;
+
     float denoiseDistance = 2.f;
     float denoiseSigma1 = 1.f;
     float denoiseSigma2 = 1.f;
