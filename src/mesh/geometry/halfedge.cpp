@@ -536,6 +536,7 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
     CanCollapseInfo cci;
     if (!canCollapse(halfEdge->edge, collapsePoint, cci)) return false;
 
+    HalfEdge* twin = halfEdge->twin;
     Vertex* left = halfEdge->vertex;
     Vertex* right = halfEdge->twin->vertex;
 
@@ -550,15 +551,19 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
     collapsedVertex->halfEdge = halfEdge->next->next->twin;
     ci.collapsedVertex = collapsedVertex;
 
+    // Removed edge wing, shifted edge wing
+    ci.wingVIDs = {halfEdge->next->next->vertex->vid, twin->next->next->vertex->vid};
+
     //TOP FACES
     // delete top face and collapsed edge.
-    ci.deletedEdges.insert(halfEdge->edge);
-    delete halfEdge->edge;
-    delete halfEdge->face;
+    ci.deletedEdges.push_back(halfEdge->edge);
+//    delete halfEdge->edge;
+//    delete halfEdge->face;
+    ci.deletedFaces.push_back(halfEdge->face);
 
     // join remaining top 2 faces
-    ci.deletedEdges.insert(halfEdge->next->edge);
-    delete halfEdge->next->edge;
+    ci.deletedEdges.push_back(halfEdge->next->edge);
+//    delete halfEdge->next->edge;
     halfEdge->next->twin->twin = halfEdge->next->next->twin;
     halfEdge->next->next->twin->twin = halfEdge->next->twin;
     halfEdge->next->twin->edge = halfEdge->next->twin->twin->edge;
@@ -574,14 +579,13 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
     delete halfEdge->next;
 
     // BOTTOM FACES
-    HalfEdge* twin = halfEdge->twin;
-
     // delete bottom face
-    delete twin->face;
+//    delete twin->face;
+    ci.deletedFaces.push_back(twin->face);
 
     // join remaining bottom 2 faces
-    ci.deletedEdges.insert(twin->next->edge);
-    delete twin->next->edge;
+    ci.deletedEdges.push_back(twin->next->edge);
+//    delete twin->next->edge;
     twin->next->twin->twin = twin->next->next->twin;
     twin->next->next->twin->twin = twin->next->twin;
     twin->next->twin->edge = twin->next->twin->twin->edge;
@@ -598,18 +602,18 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
 
     // MOVE VERTICES
     cci.rightVertices.erase(left);
-    ci.deletedVertices.insert(left);
+    ci.deletedVertices.push_back(left);
 //    delete left;
 
-    for (HalfEdge* outbound: cci.leftOutbound) {
+    for (HalfEdge* outbound : cci.leftOutbound) {
         outbound->vertex = collapsedVertex;
     }
 
     cci.leftVertices.erase(left);
-    ci.deletedVertices.insert(right);
+    ci.deletedVertices.push_back(right);
 //    delete right
 
-    for (HalfEdge* outbound: cci.rightOutbound) {
+    for (HalfEdge* outbound : cci.rightOutbound) {
         outbound->vertex = collapsedVertex;
     }
 
@@ -898,23 +902,43 @@ void HalfEdge::simplify(
         }
 
         CollapseRecord cr;
-        for(const auto& v : ci.deletedVertices) {
-            if(v->vid == ci.collapsedVertex->vid) {
-                cr.shiftedOrigin = {
-                    .halfEdge = nullptr,
-                    .point = v->point,
-                    .vid = v->vid
-                };
-            } else {
-                cr.removedOrigin = {
-                    .halfEdge = nullptr,
-                    .point = v->point,
-                    .vid = v->vid
-                };
-            }
 
-            delete v;
-        }
+        // Explicitly perform our geometry deletions here, since we didn't delete them within the function
+        cr.wingVIDs = ci.wingVIDs;
+
+        // Populate our shifted and removed vertices
+        Vertex* shiftedVert = ci.deletedVertices[0];
+        cr.shiftedOrigin = { .point = shiftedVert->point, .vid = shiftedVert->vid };
+
+        Vertex* deletedVert = ci.deletedVertices[1];
+        cr.removedOrigin = { .point = deletedVert->point, .vid = deletedVert->vid };
+
+        delete shiftedVert;
+        delete deletedVert;
+
+        // Populate our removed edges; our collapsed edge can be explicitly recreated,
+        // the other two will need to be stitched together using our removed edge
+        Edge* collapsedEdge = ci.deletedEdges[0];
+        Edge* removedEdge = ci.deletedEdges[2];
+        Edge* shiftedEdge = ci.deletedEdges[1];
+
+        // Collapsed edge is between to be shifted & removed vertices
+        cr.collapsedEID = collapsedEdge->eid;
+        cr.removedEID = removedEdge->eid;
+        cr.shiftedEID = shiftedEdge->eid;
+
+        delete collapsedEdge;
+        delete shiftedEdge;
+        delete removedEdge;
+
+        Face* topFace = ci.deletedFaces[0];
+        Face* bottomFace = ci.deletedFaces[1];
+
+        cr.topFID = topFace->fid;
+        cr.bottomFID = bottomFace->fid;
+
+        delete topFace;
+        delete bottomFace;
 
         validate(mesh);
 

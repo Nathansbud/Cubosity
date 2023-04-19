@@ -81,8 +81,18 @@ namespace HalfEdge {
 
     struct CollapseInfo {
         Vertex* collapsedVertex;
-        std::unordered_set<Edge*> deletedEdges;
-        std::unordered_set<Vertex*> deletedVertices;
+
+        // Order: kept ID, removed ID
+        std::vector<Vertex*> deletedVertices;
+
+        // Order: collapsed ID, top ID, bottom ID
+        std::vector<Edge*> deletedEdges;
+
+        // Order: top ID, bottom ID
+        std::vector<Face*> deletedFaces;
+
+        // Wing vert indices for collapse records to re-connect things
+        std::pair<int, int> wingVIDs;
     };
 
     bool collapse(Edge* edge, const Eigen::Vector3f& collapsePoint, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
@@ -111,11 +121,21 @@ namespace HalfEdge {
     Eigen::Matrix4f quadric(const Vertex* vertex);
     void updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::multimap<float, std::tuple<Edge*, Eigen::Vector3f>>& errorToEdge, std::unordered_map<Edge*, float>& edgeToError);
 
-    // For progressive meshes, we need to be able to walk back the sequence of collapses
+    // For progressive meshes, we need to be able to walk back the sequence of collapses;
+    // hence, we need to get the IDs of all removed elements during the collapse, as well as neighbors
+    // that we need to return to their rightful place
     struct CollapseRecord {
         Vertex removedOrigin;
         Vertex shiftedOrigin;
-        std::vector<Edge> removedEdges;
+
+        int collapsedEID;
+        int removedEID;
+        int shiftedEID;
+
+        int topFID;
+        int bottomFID;
+
+        std::pair<int, int> wingVIDs;
     };
 
     struct CollapseSequence {
@@ -125,4 +145,7 @@ namespace HalfEdge {
     };
 
     void simplify(std::unordered_set<HalfEdge*>& originalMesh, const int numTriangles, CollapseSequence& colSeq);
+
+    // Expansion to undo a collapse
+    void expand();
 };
