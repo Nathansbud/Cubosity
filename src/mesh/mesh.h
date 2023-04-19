@@ -34,5 +34,9 @@ private:
     std::vector<Eigen::Vector3i> _faces;
     std::unordered_set<HalfEdge::HalfEdge*> _halfEdges;
 
+    std::unordered_map<int, HalfEdge::Edge*> _edgeMap;
+    std::unordered_map<int, HalfEdge::Face*> _faceMap;
+    std::unordered_map<int, HalfEdge::Vertex*> _vertexMap;
+
     HalfEdge::GeomID _geomID;
 };

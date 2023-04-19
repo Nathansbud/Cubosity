@@ -22,6 +22,7 @@ public:
     ~GLWidget();
 
     // extra controls, dispatching to mesh/ARAP
+    void simplify();
     void subdivide();
     void denoise();
 

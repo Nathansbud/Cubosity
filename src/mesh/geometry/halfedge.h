@@ -85,8 +85,15 @@ namespace HalfEdge {
         std::unordered_set<Vertex*> deletedVertices;
     };
 
+    // For progressive meshes, we need to be able to walk back the sequence of collapses
+    struct CollapseRecord {
+        Vertex removedOrigin;
+        Vertex shiftedOrigin;
+        std::vector<Edge> removedEdges;
+    };
+
     bool collapse(Edge* edge, const Eigen::Vector3f& collapsePoint, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
-    bool collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoiht, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
+    bool collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
 
     struct DuplicateInfo {
         std::unordered_map<HalfEdge*, HalfEdge*> oldHalfEdgeToNewHalfEdge;

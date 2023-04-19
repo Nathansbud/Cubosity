@@ -26,10 +26,11 @@ MainWindow::MainWindow()
 
     addHeading(vLayout, "Controls");
 
-    QGroupBox* collapseBox = new QGroupBox("Collapse");
-    QHBoxLayout* collapseLayout = new QHBoxLayout();
+    QGroupBox* simpBox = new QGroupBox("Simplify");
+    QHBoxLayout* simpLayout = new QHBoxLayout();
 
-    collapseBox->setLayout(collapseLayout);
+    addPushButton(simpLayout, "Simplify", &MainWindow::onSimplifyButtonClick);
+    simpBox->setLayout(simpLayout);
 
     QGroupBox* denoiseBox = new QGroupBox("Denoise");
     QVBoxLayout* denoiseLayout = new QVBoxLayout();
@@ -42,7 +43,7 @@ MainWindow::MainWindow()
     denoiseBox->setLayout(denoiseLayout);
 
     addPushButton(vLayout, "Subdivide", &MainWindow::onSubdivideButtonClick);
-    vLayout->addWidget(collapseBox);
+    vLayout->addWidget(simpBox);
     vLayout->addWidget(denoiseBox);
 
 }
@@ -51,6 +52,8 @@ MainWindow::~MainWindow()
 {
     delete glWidget;
 }
+
+void MainWindow::onSimplifyButtonClick() { glWidget->simplify(); }
 
 void MainWindow::onSubdivideButtonClick() { glWidget->subdivide(); }
 

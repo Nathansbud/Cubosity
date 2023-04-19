@@ -54,6 +54,7 @@ public:
     Mesh mesh;
     void subdivide();
     void denoise(Settings&);
+    void simplify(Settings&);
 
     void init(Eigen::Vector3f &min, Eigen::Vector3f &max);
     void computeAdjacency();

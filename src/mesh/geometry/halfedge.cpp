@@ -397,6 +397,8 @@ HalfEdge::Vertex* HalfEdge::split(HalfEdge* halfEdge, std::unordered_set<HalfEdg
 }
 
 HalfEdge::Vertex* HalfEdge::split(HalfEdge* halfEdge, std::unordered_set<HalfEdge*>& halfEdges, std::unordered_set<Edge*>& newEdges) {
+    // TODO: How tf is this stuff ID'd? This is the only case that isn't handled...
+
     // including halfEdge, 6 affected edges
     HalfEdge* prev = halfEdge->next->next;
     HalfEdge* next = halfEdge->next;
@@ -406,7 +408,7 @@ HalfEdge::Vertex* HalfEdge::split(HalfEdge* halfEdge, std::unordered_set<HalfEdg
 
     Eigen::Vector3f midpoint = (halfEdge->vertex->point + twin->vertex->point) / 2.f;
     Vertex* centerVertex = new Vertex();
-    centerVertex->point = midpoint;
+    centerVertex->point = midpoint; 
 
     // there are 6 new half edges, starting at the twin of the original halfEdge and moving counter-clockwise
     HalfEdge* he[6];
@@ -597,14 +599,16 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
     // MOVE VERTICES
     cci.rightVertices.erase(left);
     ci.deletedVertices.insert(left);
-    delete left;
+//    delete left;
+
     for (HalfEdge* outbound: cci.leftOutbound) {
         outbound->vertex = collapsedVertex;
     }
 
     cci.leftVertices.erase(left);
     ci.deletedVertices.insert(right);
-    delete right;
+//    delete right
+
     for (HalfEdge* outbound: cci.rightOutbound) {
         outbound->vertex = collapsedVertex;
     }
@@ -615,7 +619,6 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
 
     halfEdges.erase(halfEdge);
     delete halfEdge;
-
     return true;
 }
 
@@ -631,6 +634,7 @@ void HalfEdge::duplicate(const std::unordered_set<HalfEdge*>& originalMesh, std:
     for (HalfEdge* oldHalfEdge : originalMesh) {
         HalfEdge* newHalfEdge = new HalfEdge();
         newMesh.insert(newHalfEdge);
+        newHalfEdge->hid = oldHalfEdge->hid;
         di.oldHalfEdgeToNewHalfEdge.insert({oldHalfEdge, newHalfEdge});
     }
 
@@ -648,6 +652,7 @@ void HalfEdge::duplicate(const std::unordered_set<HalfEdge*>& originalMesh, std:
             Edge* newEdge = new Edge();
             newHalfEdge->edge = newEdge;
             newEdge->halfEdge = newHalfEdge;
+            newEdge->eid = oldHalfEdge->edge->eid;
             oldEdgeToNewEdge[oldHalfEdge->edge] = newEdge;
         }
 
@@ -657,6 +662,7 @@ void HalfEdge::duplicate(const std::unordered_set<HalfEdge*>& originalMesh, std:
             Face* newFace = new Face();
             newHalfEdge->face = newFace;
             newFace->halfEdge = newHalfEdge;
+            newFace->fid = oldHalfEdge->face->fid;
             oldFaceToNewFace[oldHalfEdge->face] = newFace;
         }
 
@@ -667,6 +673,7 @@ void HalfEdge::duplicate(const std::unordered_set<HalfEdge*>& originalMesh, std:
             newHalfEdge->vertex = newVertex;
             newVertex->halfEdge = newHalfEdge;
             newVertex->point = oldHalfEdge->vertex->point;
+            newVertex->vid = oldHalfEdge->vertex->vid;
             di.oldVertToNewVert[oldHalfEdge->vertex] = newVertex;
             di.oldVertices.insert(oldHalfEdge->vertex);
         }
@@ -843,6 +850,8 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
     std::multimap<float, std::tuple<Edge*, Eigen::Vector3f>> errorToEdge;
     std::unordered_map<Edge*, float> edgeToError;
 
+    std::vector<CollapseRecord> collapses;
+
     for (HalfEdge* he : mesh) {
         if (!faces.contains(he->face)) {
             faces.insert(he->face);
@@ -884,10 +893,29 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
             break;
         }
 
+        CollapseRecord cr;
+        for(const auto& v : ci.deletedVertices) {
+            if(v->vid == ci.collapsedVertex->vid) {
+                cr.shiftedOrigin = {
+                    .halfEdge = nullptr,
+                    .point = v->point,
+                    .vid = v->vid
+                };
+            } else {
+                cr.removedOrigin = {
+                    .halfEdge = nullptr,
+                    .point = v->point,
+                    .vid = v->vid
+                };
+            }
+
+            delete v;
+        }
+
         validate(mesh);
 
         Vertex* collapsedVertex = ci.collapsedVertex;
-        for (Edge* deletedEdge: ci.deletedEdges) {
+        for (Edge* deletedEdge : ci.deletedEdges) {
             float edgeError = edgeToError[deletedEdge];
 
             auto it = errorToEdge.find(edgeError);
@@ -897,7 +925,7 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
             edgeToError.erase(deletedEdge);
         }
 
-        for (Vertex* deletedVertex: ci.deletedVertices) {
+        for (Vertex* deletedVertex : ci.deletedVertices) {
             vertToQuadric.erase(deletedVertex);
         }
 
@@ -971,7 +999,12 @@ void HalfEdge::simplify(std::unordered_set<HalfEdge*>& mesh, const int numTriang
             cur = cur->twin->next;
         } while (cur != start);
 
-
+        collapses.push_back(cr);
         curTriangles -= 2;
+    }
+
+    std::cout << "Removal Sequence: " << std::endl;
+    for(int i = 0; i < collapses.size(); i++) {
+        std::cout << collapses[i].removedOrigin.vid << std::endl;
     }
 }

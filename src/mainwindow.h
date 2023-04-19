@@ -23,6 +23,9 @@ private:
     void addPushButton(QBoxLayout *layout, QString text, auto function);
     void addCheckBox(QBoxLayout *layout, QString text, bool value, auto function);
 
+    // Simplification
+    void onSimplifyButtonClick();
+
     // Subdivision
     void onSubdivideButtonClick();
 

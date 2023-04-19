@@ -286,3 +286,7 @@ void ARAP::denoise(Settings& s) {
     this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
     this->cached_positions = vertices;
 }
+
+void ARAP::simplify(Settings& s) {
+    mesh.simplify(10);
+}
