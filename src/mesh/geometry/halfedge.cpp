@@ -614,6 +614,8 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
 //    delete right
 
     for (HalfEdge* outbound : cci.rightOutbound) {
+        // All of these neighbors were moved
+        ci.movedEdges.insert(outbound->edge->eid);
         outbound->vertex = collapsedVertex;
     }
 
@@ -624,6 +626,77 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
     halfEdges.erase(halfEdge);
     delete halfEdge;
     return true;
+}
+
+void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record) {
+    // TODO: Any `nullptr` (or similar placeholder field) needs to be figured out!
+    // - How to return neighbors?
+
+    // Assume that vertex collapse was obtained by index, record.shiftedOrigin.vid;
+    Vertex& shifted = record.shiftedOrigin;
+    Vertex& removed = record.removedOrigin;
+
+    if(collapsed->vid != shifted.vid) {
+        std::cerr << "Cannot expand vertex " << collapsed->vid << " using collapse record for " << shifted.vid << std::endl;
+        return;
+    }
+
+    // Reverse the collapsing of edge
+    Edge* collapsedEdge = new Edge();
+    HalfEdge* collapsedTop = new HalfEdge();
+    HalfEdge* collapsedBottom = new HalfEdge();
+
+    Edge* shiftedEdge = new Edge();
+
+    // Is this where these are supposed to go?
+    HalfEdge* shiftedInside = new HalfEdge();
+    HalfEdge* shiftedOutside = new HalfEdge();
+
+    Vertex* removedVertex = new Vertex();
+    Edge* removedEdge = new Edge();
+
+    Face* topFace = new Face();
+    Face* bottomFace = new Face();
+
+    // Remake our collapsed edge!
+    collapsedEdge->eid = record.collapsedEID;
+    collapsedEdge->halfEdge = collapsedTop;
+
+    collapsedTop->edge = collapsedEdge;
+    collapsedTop->twin = collapsedBottom;
+    collapsedTop->face = nullptr;
+    collapsedTop->next = nullptr;
+    collapsedTop->vertex = collapsed;
+    collapsedTop->hid = -1;
+
+    collapsedBottom->edge = collapsedEdge;
+    collapsedBottom->twin = collapsedTop;
+    collapsedBottom->face = nullptr;
+    collapsedBottom->next = nullptr;
+    collapsedBottom->vertex = nullptr;
+    collapsedBottom->hid = -1;
+
+    // Remake our collapsed faces
+    topFace->fid = record.topFID;
+    topFace->halfEdge = collapsedTop;
+
+    bottomFace->fid = record.bottomFID;
+    bottomFace->halfEdge = collapsedBottom;
+
+    removedVertex->point = removed.point;
+    removedVertex->halfEdge = nullptr;
+    removedVertex->vid = removed.vid;
+
+    // Return our collapsed vertex to its original position
+    collapsed->point = shifted.point;
+    collapsed->halfEdge = nullptr;
+    collapsed->vid = collapsed->vid;
+
+//    HalfEdge col = collapsed->halfEdge;
+//    do {
+//        col->twin->vertex;
+//        col = col->twin->next;
+//    } while (col != collapsed->halfEdge);
 }
 
 void HalfEdge::duplicate(const std::unordered_set<HalfEdge*>& originalMesh, std::unordered_set<HalfEdge*>& newMesh) {
@@ -903,8 +976,12 @@ void HalfEdge::simplify(
 
         CollapseRecord cr;
 
-        // Explicitly perform our geometry deletions here, since we didn't delete them within the function
+        // Pass through our wing vertices and moved edges for expansion, as we need
+        // to return all our original neighbors
         cr.wingVIDs = ci.wingVIDs;
+        cr.movedEdges = ci.movedEdges;
+
+        // Explicitly perform our geometry deletions here, since we didn't delete them within the function
 
         // Populate our shifted and removed vertices
         Vertex* shiftedVert = ci.deletedVertices[0];

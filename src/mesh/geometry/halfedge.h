@@ -91,6 +91,8 @@ namespace HalfEdge {
         // Order: top ID, bottom ID
         std::vector<Face*> deletedFaces;
 
+        std::unordered_set<int> movedEdges;
+
         // Wing vert indices for collapse records to re-connect things
         std::pair<int, int> wingVIDs;
     };
@@ -135,6 +137,7 @@ namespace HalfEdge {
         int topFID;
         int bottomFID;
 
+        std::unordered_set<int> movedEdges;
         std::pair<int, int> wingVIDs;
     };
 
@@ -147,5 +150,5 @@ namespace HalfEdge {
     void simplify(std::unordered_set<HalfEdge*>& originalMesh, const int numTriangles, CollapseSequence& colSeq);
 
     // Expansion to undo a collapse
-    void expand();
+    void expand(Vertex*, CollapseRecord&);
 };

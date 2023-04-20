@@ -124,4 +124,6 @@ void Mesh::simplify(const int n) {
     std::cout << "Started With: " << cs.initialFaceResolution << " faces" << std::endl;
     std::cout << "Collapses: " << cs.collapses.size() << std::endl;
     std::cout << "Ended With: " << cs.finalFaceResolution << " faces" << std::endl;
+
+    HalfEdge::toVerts(_halfEdges, _vertices, _faces);
 }

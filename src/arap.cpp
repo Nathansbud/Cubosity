@@ -287,8 +287,6 @@ void ARAP::denoise(Settings& s) {
     this->cached_positions = vertices;
 }
 
-
-
 void ARAP::simplify(Settings& s) {
     mesh.simplify(s.simplifyTarget);
 
