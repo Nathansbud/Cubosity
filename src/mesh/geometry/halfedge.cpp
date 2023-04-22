@@ -646,14 +646,16 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record) {
     HalfEdge* collapsedTop = new HalfEdge();
     HalfEdge* collapsedBottom = new HalfEdge();
 
-    Edge* shiftedEdge = new Edge();
-
-    // Is this where these are supposed to go?
-    HalfEdge* shiftedInside = new HalfEdge();
-    HalfEdge* shiftedOutside = new HalfEdge();
-
+    // Return our removed edge and all its associated geometry
     Vertex* removedVertex = new Vertex();
     Edge* removedEdge = new Edge();
+    HalfEdge* removedInner = new HalfEdge();
+    HalfEdge* removedNext = new HalfEdge();
+
+    // Return our shifted edge and all associated geometry
+    Edge* shiftedEdge = new Edge();
+    HalfEdge* shiftedInner = new HalfEdge();
+    HalfEdge* shiftedNext = new HalfEdge();
 
     Face* topFace = new Face();
     Face* bottomFace = new Face();
@@ -662,19 +664,47 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record) {
     collapsedEdge->eid = record.collapsedEID;
     collapsedEdge->halfEdge = collapsedTop;
 
-    collapsedTop->edge = collapsedEdge;
+    collapsedTop->next = removedInner;
     collapsedTop->twin = collapsedBottom;
-    collapsedTop->face = nullptr;
-    collapsedTop->next = nullptr;
     collapsedTop->vertex = collapsed;
+    collapsedTop->edge = collapsedEdge;
+    collapsedTop->face = topFace;
     collapsedTop->hid = -1;
 
-    collapsedBottom->edge = collapsedEdge;
+    removedInner->next = removedNext;
+    // Indeterminate: removedInner->twin, retrieved from neighbor iteration
+    removedInner->vertex = removedVertex;
+    removedInner->edge = removedEdge;
+    removedInner->face = topFace;
+    removedInner->hid = -1;
+
+    removedNext->next = collapsedTop;
+    // Indeterminate: removedInner->twin, retrieved from neighbor iteration (outgoing edge top)
+    // Indeterminate: removedInner->vertex, retrieved from neighbor iteration (top wing vert)
+    // Indeterminate: removedInner->edge, split edge (outgoing edge)
+    removedNext->face = topFace;
+    removedNext->hid = -1;
+
+    collapsedBottom->next = shiftedInner;
     collapsedBottom->twin = collapsedTop;
-    collapsedBottom->face = nullptr;
-    collapsedBottom->next = nullptr;
-    collapsedBottom->vertex = nullptr;
+    collapsedBottom->vertex = removedVertex;
+    collapsedBottom->edge = collapsedEdge;
+    collapsedBottom->face = bottomFace;
     collapsedBottom->hid = -1;
+
+    shiftedInner->next = shiftedNext;
+    // Indeterminate: shiftedInner->twin, retrieved from neighbor iteration (outgoing)
+    shiftedInner->vertex = collapsed;
+    shiftedInner->edge = shiftedEdge;
+    shiftedInner->face = bottomFace;
+    shiftedInner->hid = -1;
+
+    shiftedNext->next = collapsedBottom;
+    // Indeterminate: shiftedNext->twin, retrieved from neighbor iteration
+    // Indeterminate: shiftedNext->vertex, retrieved from neighbor iteration (bottom wing vert)
+    // Indeterminate: shiftedNext->edge, split edge
+    shiftedNext->face = bottomFace;
+    shiftedNext->hid = -1;
 
     // Remake our collapsed faces
     topFace->fid = record.topFID;
@@ -684,19 +714,55 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record) {
     bottomFace->halfEdge = collapsedBottom;
 
     removedVertex->point = removed.point;
-    removedVertex->halfEdge = nullptr;
+    removedVertex->halfEdge = removedInner;
     removedVertex->vid = removed.vid;
+
+    // TODO: Neighbor moving!
+    HalfEdge* col = collapsed->halfEdge;
+    do {
+        Vertex* v = col->twin->vertex;
+
+        //            ci.wingVIDs = {halfEdge->next->next->vertex->vid, twin->next->next->vertex->vid};
+        HalfEdge* next = col->twin->next;
+        if(record.wingVIDs.first == v->vid) {
+            // restitch our top face halfedge, non-removed edge
+            HalfEdge* priorTwin = col->twin;
+
+            priorTwin->edge = removedEdge;
+            priorTwin->twin = removedInner;
+            priorTwin->face = topFace;
+            priorTwin->next = collapsedTop;
+
+            col->twin = removedNext;
+
+            removedNext->twin = col;
+            removedNext->edge = col->edge;
+
+            // ...?
+        } else if(record.wingVIDs.second == v->vid) {
+            col->twin->face = bottomFace;
+            col->twin->next = collapsedBottom;
+
+
+            // restitch out bottom face halfedge
+        }
+
+        // Shmoove all our edges?
+        if(record.movedEdges.contains(col->edge->eid)) {
+
+        } else {
+
+
+        }
+
+        col = next;
+    } while(col != collapsed->halfEdge);
 
     // Return our collapsed vertex to its original position
     collapsed->point = shifted.point;
-    collapsed->halfEdge = nullptr;
+    collapsed->halfEdge = collapsedTop;
     collapsed->vid = collapsed->vid;
 
-//    HalfEdge col = collapsed->halfEdge;
-//    do {
-//        col->twin->vertex;
-//        col = col->twin->next;
-//    } while (col != collapsed->halfEdge);
 }
 
 void HalfEdge::duplicate(const std::unordered_set<HalfEdge*>& originalMesh, std::unordered_set<HalfEdge*>& newMesh) {
