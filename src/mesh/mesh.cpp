@@ -149,7 +149,7 @@ void Mesh::simplify(const int n) {
     HalfEdge::CollapseSequence cs;
     HalfEdge::simplify(_halfEdges, n, cs);
 
-    saveProgressiveFile("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/outputs/testing.stamp", cs);
+    saveProgressiveFile("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive/testing.stamp", cs);
 
     HalfEdge::toVerts(_halfEdges, _vertices, _faces);
 }
