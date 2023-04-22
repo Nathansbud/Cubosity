@@ -16,7 +16,7 @@ public:
     // why no work
     void loadFromFile(const std::string &filePath);
     void saveToFile(const std::string &filePath);
-    void saveProgressiveFile(const std::string &filepath);
+    void saveProgressiveFile(const std::string &filepath, const HalfEdge::CollapseSequence& sequence);
 
     void subdivide();
     void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);

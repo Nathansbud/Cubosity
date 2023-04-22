@@ -97,6 +97,34 @@ void Mesh::saveToFile(const string &filePath)
     outfile.close();
 }
 
+void Mesh::saveProgressiveFile(const string &filePath, const HalfEdge::CollapseSequence& cs) {
+    ofstream outfile;
+    outfile.open(filePath);
+    if(outfile.fail()) {
+        std::cout << "Failed to open: " << filePath << std::endl;
+    } else {
+        outfile << "I " << cs.initialFaceResolution << " " << cs.finalFaceResolution << endl;
+
+        int cols = 0;
+        for(const HalfEdge::CollapseRecord& cr : cs.collapses) {
+            outfile << "C " << cr.collapsedEID << " ";
+            outfile << "R " << cr.removedEID << " " << cr.removedOrigin.vid << " " << cr.removedOrigin.point[0] << " " << cr.removedOrigin.point[1] << " " << cr.removedOrigin.point[2] << " ";
+            outfile << "S " << cr.shiftedEID << " " << cr.shiftedOrigin.vid << " " << cr.shiftedOrigin.point[0] << " " << cr.shiftedOrigin.point[1] << " " << cr.shiftedOrigin.point[2] << " ";
+            outfile << "F " << cr.topFID << " " << cr.bottomFID << " ";
+            outfile << "W " << cr.wingVIDs.first << " " << cr.wingVIDs.second << " ";
+            outfile << "N ";
+            for(const auto n : cr.movedEdges) {
+                outfile << n << " ";
+            }
+            outfile << endl;
+            cols++;
+        }
+        std::cout << "Outputted " << cols << " collapse records..." << std::endl;
+    }
+
+    outfile.close();
+}
+
 void Mesh::subdivide() {
     std::unordered_set<HalfEdge::HalfEdge*> subdividedMesh;
     HalfEdge::subdivide(_halfEdges, subdividedMesh);
@@ -121,9 +149,7 @@ void Mesh::simplify(const int n) {
     HalfEdge::CollapseSequence cs;
     HalfEdge::simplify(_halfEdges, n, cs);
 
-    std::cout << "Started With: " << cs.initialFaceResolution << " faces" << std::endl;
-    std::cout << "Collapses: " << cs.collapses.size() << std::endl;
-    std::cout << "Ended With: " << cs.finalFaceResolution << " faces" << std::endl;
+    saveProgressiveFile("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/outputs/testing.stamp", cs);
 
     HalfEdge::toVerts(_halfEdges, _vertices, _faces);
 }
