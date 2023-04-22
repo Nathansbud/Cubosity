@@ -1,4 +1,6 @@
 #include "mainwindow.h"
+
+#include "interface/OrientationGroup.h"
 #include <QMainWindow>
 #include <QSlider>
 #include <QSpinBox>
@@ -9,19 +11,26 @@
 #include <QPushButton>
 #include <QBoxLayout>
 #include <QGroupBox>
+#include <QColorDialog>
+#include <QRandomGenerator>
 
+void placeholder() {}
 MainWindow::MainWindow()
 {
     glWidget = new GLWidget();
 
-    QHBoxLayout* hLayout = new QHBoxLayout(); // horizontal layout for canvas and controls panel
-    QVBoxLayout* vLayout = new QVBoxLayout(); // vertical layout for control panel
+    hLayout = new QHBoxLayout(); // horizontal layout for canvas and controls panel
+    vLayout = new QVBoxLayout(); // vertical layout for control panel
+    rotLayout = new QVBoxLayout(); // vertical layout for control panel
+
     vLayout->setAlignment(Qt::AlignTop);
+    rotLayout->setAlignment(Qt::AlignTop);
 
     hLayout->addLayout(vLayout);
-
     // Force ARAP frame to occupy maximum width
     hLayout->addWidget(glWidget, 1);
+    hLayout->addLayout(rotLayout);
+
     this->setLayout(hLayout);
 
     addHeading(vLayout, "Controls");
@@ -46,10 +55,18 @@ MainWindow::MainWindow()
     addPushButton(vLayout, "Subdivide", &MainWindow::onSubdivideButtonClick);
     vLayout->addWidget(simpBox);
     vLayout->addWidget(denoiseBox);
+
+    QGroupBox* orientBox = new QGroupBox("Orientations");
+
+    orientLayout = new QVBoxLayout();
+    orientBox->setLayout(orientLayout);
+
+    addPushButton(orientLayout, "Add Group", &MainWindow::addOrientationGroup);
+
+    rotLayout->addWidget(orientBox);
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     delete glWidget;
 }
 
@@ -62,6 +79,17 @@ void MainWindow::onDenoiseButtonClick() { glWidget->denoise(); }
 void MainWindow::onDenoiseDistanceChange(double d) { glWidget->settings.denoiseDistance = d; }
 void MainWindow::onDenoiseSig1Change(double s) { glWidget->settings.denoiseSigma1 = s; }
 void MainWindow::onDenoiseSig2Change(double s) { glWidget->settings.denoiseSigma2 = s; }
+
+void MainWindow::addOrientationGroup() {
+    OrientationGroup* ng = new OrientationGroup();
+    glWidget->settings.orientationGroups.insert({ng->groupID, {
+        .lambda = ng->lambda->value(),
+        .color = ng->color,
+        .rotation = ng->rotation
+    }});
+
+    orientLayout->addWidget(ng);
+}
 
 void MainWindow::addHeading(QBoxLayout* layout, QString text) {
     QFont font;
@@ -94,8 +122,7 @@ void MainWindow::addSpinBox(QBoxLayout* layout, QString text, int min, int max, 
     addLabel(subLayout, text);
     subLayout->addWidget(box);
     layout->addLayout(subLayout);
-    connect(box, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-            this, function);
+    connect(box, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, function);
 }
 
 void MainWindow::addDoubleSpinBox(QBoxLayout* layout, QString text, double min, double max, double step, double val, int decimal, auto function) {
@@ -109,8 +136,7 @@ void MainWindow::addDoubleSpinBox(QBoxLayout* layout, QString text, double min, 
     addLabel(subLayout, text);
     subLayout->addWidget(box);
     layout->addLayout(subLayout);
-    connect(box, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-            this, function);
+    connect(box, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, function);
 }
 
 void MainWindow::addPushButton(QBoxLayout* layout, QString text, auto function) {

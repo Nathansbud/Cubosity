@@ -53,6 +53,12 @@ add_executable(${PROJECT_NAME}
     src/mesh/mesh.cpp
     src/mesh/mesh.h
 
+    # UI elements
+    src/interface/OrientationGroup.h
+
+    src/interface/UIUtil.h
+    src/interface/UIUtil.cpp
+
     util/tiny_obj_loader.h
     util/zutils.h
     util/unsupportedeigenthing/OpenGLSupport
