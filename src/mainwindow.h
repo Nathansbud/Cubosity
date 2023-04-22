@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include <QBoxLayout>
+#include <QLabel>
 #include "glwidget.h"
 
 class MainWindow : public QWidget
@@ -21,6 +22,7 @@ private:
     QVBoxLayout* rotLayout;
 
     QVBoxLayout* orientLayout;
+//    QLabel* currentLOD = 0;
 
     void addOrientationGroup();
 
@@ -35,6 +37,8 @@ private:
     // Simplification
     void onSimplifyButtonClick();
     void onSimplifyTargetChange(int);
+
+    void onExpandButtonClick();
 
     // Subdivision
     void onSubdivideButtonClick();

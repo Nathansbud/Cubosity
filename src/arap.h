@@ -29,11 +29,13 @@ struct Orientation {
 struct Settings {
     int simplifyTarget = 500;
 
+    int collapseLevel = 0;
+
     float denoiseDistance = 2.f;
     float denoiseSigma1 = 1.f;
     float denoiseSigma2 = 1.f;
 
-    std::unordered_map<int, Orientation> orientationGroups;
+    std::unordered_map<int, Orientation> orientationGroups;    
 };
 
 class ARAP
@@ -68,6 +70,7 @@ public:
     void subdivide();
     void denoise(Settings&);
     void simplify(Settings&);
+    void expand(Settings&);
 
     void init(Eigen::Vector3f &min, Eigen::Vector3f &max);
     void computeAdjacency();

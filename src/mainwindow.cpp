@@ -40,6 +40,8 @@ MainWindow::MainWindow()
 
     addSpinBox(simpLayout, "", 4, 10000000, 1, glWidget->settings.simplifyTarget, &MainWindow::onSimplifyTargetChange);
     addPushButton(simpLayout, "Simplify", &MainWindow::onSimplifyButtonClick);
+    addPushButton(simpLayout, "Expand", &MainWindow::onExpandButtonClick);
+
     simpBox->setLayout(simpLayout);
 
     QGroupBox* denoiseBox = new QGroupBox("Denoise");
@@ -64,6 +66,7 @@ MainWindow::MainWindow()
     addPushButton(orientLayout, "Add Group", &MainWindow::addOrientationGroup);
 
     rotLayout->addWidget(orientBox);
+    this->showFullScreen();
 }
 
 MainWindow::~MainWindow() {
@@ -72,6 +75,9 @@ MainWindow::~MainWindow() {
 
 void MainWindow::onSimplifyButtonClick() { glWidget->simplify(); }
 void MainWindow::onSimplifyTargetChange(int f) { glWidget->settings.simplifyTarget = f; }
+
+void MainWindow::onExpandButtonClick() { glWidget->expand(); }
+
 
 void MainWindow::onSubdivideButtonClick() { glWidget->subdivide(); }
 

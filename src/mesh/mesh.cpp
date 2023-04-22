@@ -151,5 +151,31 @@ void Mesh::simplify(const int n) {
 
     saveProgressiveFile("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive/testing.stamp", cs);
 
+    int numCollapses = cs.collapses.size();
+    this->_collapseState = {
+        .sequence = cs,
+        .detailLevel = numCollapses
+    };
+
+    HalfEdge::toVerts(_halfEdges, _vertices, _faces);
+}
+
+void Mesh::expand() {
+    if(_collapseState.detailLevel > 0) {
+        HalfEdge::CollapseRecord cr = _collapseState.sequence.collapses[--_collapseState.detailLevel];
+        HalfEdge::Vertex* toExpand = nullptr;
+        for (const HalfEdge::HalfEdge* halfEdge : _halfEdges) {
+            if(halfEdge->vertex->vid == cr.shiftedOrigin.vid) {
+                toExpand = halfEdge->vertex;
+                break;
+            }
+        }
+
+        if(toExpand) HalfEdge::expand(toExpand, cr);
+        else {
+            std::cout << "idk what went wrong here buck stacko" << std::endl;
+        }
+    }
+
     HalfEdge::toVerts(_halfEdges, _vertices, _faces);
 }

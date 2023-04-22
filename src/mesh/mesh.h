@@ -21,6 +21,7 @@ public:
     void subdivide();
     void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);
     void simplify(const int n);
+    void expand();
 
     const std::vector<Eigen::Vector3f>& getVertices() {
         return _vertices;
@@ -38,6 +39,8 @@ private:
     std::unordered_map<int, HalfEdge::Edge*> _edgeMap;
     std::unordered_map<int, HalfEdge::Face*> _faceMap;
     std::unordered_map<int, HalfEdge::Vertex*> _vertexMap;
+
+    HalfEdge::CollapseState _collapseState;
 
     HalfEdge::GeomID _geomID;
 };

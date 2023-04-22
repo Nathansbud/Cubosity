@@ -147,6 +147,11 @@ namespace HalfEdge {
         int finalFaceResolution;
     };
 
+    struct CollapseState {
+        CollapseSequence sequence;
+        int detailLevel = 0;
+    };
+
     void simplify(std::unordered_set<HalfEdge*>& originalMesh, const int numTriangles, CollapseSequence& colSeq);
 
     // Expansion to undo a collapse

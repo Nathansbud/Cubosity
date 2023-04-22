@@ -23,8 +23,11 @@ public:
 
     // extra controls, dispatching to mesh/ARAP
     void simplify();
+    void expand();
+
     void subdivide();
     void denoise();
+
 
     Settings settings;
 private:
