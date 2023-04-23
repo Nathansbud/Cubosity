@@ -37,6 +37,7 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
         this->remap = vector<int>(vertices.size());
         this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
         this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+        this->cubeData = vector<CubeData>(vertices.size(), CubeData{});
         this->cached_positions = vertices;
         this->mesh.initFromVectors(vertices, triangles);
 
@@ -63,6 +64,9 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
 
     coeffMin = all_vertices.colwise().minCoeff();
     coeffMax = all_vertices.colwise().maxCoeff();
+
+    this->modified = true;
+    this->precompute();
 }
 
 void ARAP::computeAdjacency() {
@@ -71,6 +75,10 @@ void ARAP::computeAdjacency() {
 
     this->adj.clear();
     this->adj.resize(vertices.size());
+
+    this->faceAdj.clear();
+    this->faceAdj.resize(vertices.size());
+
     vector<bool> initialized(vertices.size(), false);
 
     for(int i = 0; i < faces.size(); i++) {
@@ -79,6 +87,10 @@ void ARAP::computeAdjacency() {
             int vert = tri[v];
             int nextVert = tri[(v + 1) % 3];
             int lastVert = tri[(v + 2) % 3];
+
+            // for each vertex, this face is adjacent to it
+            this->faceAdj[vert].push_back(i);
+
             if(initialized[vert]) {
                 // neighbor vertices and their wing vertices, as we need to compute cotangent angles
                 auto& av = this->adj[vert];
@@ -126,6 +138,7 @@ void ARAP::precompute() {
 
         this->computeWeights(cached_positions);
         this->computeSystem();
+        this->getPerVertexInfo();
     }
 
     this->modified = false;
@@ -194,6 +207,175 @@ void ARAP::computeRotations(const auto& newVerts, const int mover, const Vector3
     }
 }
 
+void ARAP::computeCubeRotations(const auto& newVerts) {
+    for (int v = 0; v < this->adj.size(); v++) {
+        const Vector3f& vertex = this->cached_positions[v];
+        int remappedVertex = this->remap[v];
+        auto& neighborhood = this->adj[v];
+        CubeData& currentCubeData = this->cubeData[v];
+        Vector3f& vertexNormal = this->normals[v];
+        float vertexArea = this->areas[v];
+
+        // Compute the D and D' matrices
+        // They are 3xN(i) where D is the old positions and D' is the new vertex positions of the neighbors
+        MatrixXf D = MatrixXf::Zero(3, neighborhood.size());
+        MatrixXf Dprime = MatrixXf::Zero(3, neighborhood.size());
+
+        // The neighborhoodW matrix is a subsection of the W matrix that just has weights for neighbors on the diagonal
+        MatrixXf neighborhoodW = MatrixXf::Zero(neighborhood.size(), neighborhood.size());
+
+        int neighborNum = 0;
+        for(const auto& [neighborIndex, _] : this->adj[v]) {
+            const Vector3f& oldNeighborPos = this->cached_positions[neighborIndex];
+            D.col(neighborNum) = oldNeighborPos;
+
+            int remappedNeighbor = this->remap[neighborIndex];
+            const Vector3f& newNeighborPos = (remappedNeighbor != -1) ? newVerts.row(remappedNeighbor) : this->cached_positions[neighborIndex]; // don't allow anchors to move
+            Dprime.col(neighborNum) = newNeighborPos;
+
+            neighborhoodW(neighborNum, neighborNum) = W.coeff(v, neighborIndex);
+
+            neighborNum++;
+        }
+
+        // FROM REFERENCE IMPLEMENTATION:
+        // Note:
+        // M = [D n] * [W 0; 0 rho] * [Dprime (z-u)]'
+        //   = D * W * Dprime' + n * rho * (z-u)'
+        //   = Mpre + n * rho * (z-u)'
+        MatrixXf Mprecomputed = D * neighborhoodW * Dprime.transpose();
+
+        for (int i = 0; i < 100; i++) {
+            MatrixXf M = Mprecomputed + (currentCubeData.rho * vertexNormal * (currentCubeData.z - currentCubeData.u).transpose());
+
+            auto svd = M.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
+            Matrix3f R = svd.matrixV() * svd.matrixU().transpose();
+
+            // if our determinant is negative, we found our reflection matrix instead of our rotation one;
+            // invert our smallest singular value, per the paper
+            if(R.determinant() < 0) {
+                auto newU = svd.matrixU();
+                // Singular values are always sorted in decreasing order
+                newU.col(2) *= -1;
+                R = svd.matrixV() * newU.transpose();
+            }
+
+            rotations[v] = R;
+
+
+            float LAMBDA = 0.4f; // NOTE: pass in as setting eventually
+            float MU = 10.f; // NOTE: pass in as setting eventually;
+            float TAU = 2.f; // NOTE: pass in as a setting eventually;
+            float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
+            float EPSILON_RELATIVE = 1e-3f; // value specified in paper
+
+            // Z step
+            // Shrinkage step can be solved with Sκ(a)=(a − κ)+ − (−a − κ)+.
+            // credit: https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf
+            // Section 4.3
+            // k = lambda * area / rho
+            // a = Ri * normal + u
+            Vector3f prevZ = currentCubeData.z;
+            Vector3f a = R * vertexNormal + currentCubeData.u;
+            float k = LAMBDA * vertexArea / currentCubeData.rho;
+            currentCubeData.z = (a.array() - k).max(0.f) - (-a.array() - k).max(0.f);
+
+
+            // U step
+            // u^k+1 = u^k + Ri * normal - z
+            currentCubeData.u += R * vertexNormal - currentCubeData.z;
+
+
+            // RHO and U step
+            // credit: https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf
+            // Section 3.4.1
+            float rResidual = (R * vertexNormal - currentCubeData.z).norm();
+            float sResidual = (-currentCubeData.rho * (currentCubeData.z - prevZ)).norm();
+
+            if (rResidual > MU * sResidual) {
+                currentCubeData.rho *= TAU;
+                currentCubeData.u /= TAU;
+            } else if (sResidual > MU * rResidual) {
+                currentCubeData.rho /= TAU;
+                currentCubeData.u *= TAU;
+            }
+
+            // Stopping Criteria
+            // credit: https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf
+            // Section 3.3.1
+
+            // epsilonPrimal = sqrt(p)*epsilonAbsolute + epsilonRelative*max{||x||, ||z||, ||c=0||}
+            // epsilonDual = sqrt(n)*epsolonAbsolute + epsilonRelative*(||rho*u||)
+            // where n = 3 (dimensionality of R)
+            // where p = 6 (no clue where this comes from aparrently A is pxn but so I would think its 3 but their reference code multiplies by 2
+
+            float n = (float) R.cols();
+            float p = 2.f * n;
+            float epsilonPrimal = sqrtf(p)*EPSILON_ABSOLUTE + EPSILON_RELATIVE * max((R * vertexNormal).norm(), currentCubeData.z.norm());
+            float epsilonDual = sqrtf(n)*EPSILON_ABSOLUTE + EPSILON_RELATIVE * (currentCubeData.rho * currentCubeData.u).norm();
+
+            if (rResidual < epsilonPrimal && sResidual < epsilonDual) {
+                break;
+            }
+        }
+    }
+}
+
+void ARAP::getPerVertexInfo() {
+    const std::vector<Vector3i>& faces = m_shape.getFaces();
+    this->normals.clear();
+    this->normals.resize(this->cached_positions.size());
+
+    this->areas.clear();
+    this->areas.resize(this->cached_positions.size());
+
+    for (int vert = 0; vert < this->cached_positions.size(); vert++) {
+         std::vector<int>& adjacentFaces = this->faceAdj[vert];
+         Vector3f vertexNormal = Vector3f::Zero();
+         float vertexArea = 0.f;
+
+         for (int faceIndex : adjacentFaces) {
+            const Vector3i& face = faces[faceIndex];
+
+            // NORMAL
+            Vector3f faceNormal = getFaceNormal(face);
+            vertexNormal += faceNormal;
+
+            // AREA
+            vertexArea += getFaceArea(face);
+         }
+
+         vertexNormal /= adjacentFaces.size();
+         this->normals[vert] = vertexNormal;
+
+         this->areas[vert] = vertexArea;
+    }
+}
+
+Vector3f ARAP::getFaceNormal(const Vector3i& face) {
+    Vector3f& v1 = this->cached_positions[face[0]];
+    Vector3f& v2 = this->cached_positions[face[1]];
+    Vector3f& v3 = this->cached_positions[face[2]];
+
+    Vector3f e1 = v2 - v1;
+    Vector3f e2 = v3 - v1;
+    Vector3f n = e1.cross(e2);
+    return n.normalized();
+}
+
+float ARAP::getFaceArea(const Vector3i& face) {
+    // Credit: https://math.stackexchange.com/questions/128991/how-to-calculate-the-area-of-a-3d-triangle
+    Vector3f& v1 = this->cached_positions[face[0]];
+    Vector3f& v2 = this->cached_positions[face[1]];
+    Vector3f& v3 = this->cached_positions[face[2]];
+
+    Eigen::Vector3f sideA = v2 - v1;
+    Eigen::Vector3f sideB = v3 - v1;
+
+    return sideA.cross(sideB).norm() / 2;
+}
+
+
 void ARAP::computeSystem() {
     const std::unordered_set<int>& anchors = this->m_shape.getAnchors();
     this->L = SparseMatrix<float>(this->adj.size() - anchors.size(), this->adj.size() - anchors.size());
@@ -228,6 +410,7 @@ void ARAP::move(int vertex, Vector3f targetPosition) {
     new_vertices[vertex] = targetPosition;
 
     MatrixXf estimate = MatrixXf::Zero(this->adj.size() - anchors.size(), 3);
+
     for(int v = 0; v < this->adj.size(); v++) {
         int r = this->remap[v];
         if(r != -1) {
@@ -261,6 +444,58 @@ void ARAP::move(int vertex, Vector3f targetPosition) {
         estimate = this->sal.solve(b);
     }
 
+
+    for(int i = 0; i < this->adj.size(); i++) {
+        int r = this->remap[i];
+
+        // no need to move
+        if(r == -1) continue;
+        new_vertices[i] = estimate.row(r);
+    }
+
+    m_shape.setVertices(new_vertices);
+}
+
+void ARAP::cubify() {
+    const vector<Vector3f>& vertices = mesh.getVertices();
+
+    std::vector<Eigen::Vector3f> new_vertices = m_shape.getVertices();
+    const std::unordered_set<int>& anchors = m_shape.getAnchors();
+
+    MatrixXf estimate = MatrixXf::Zero(this->adj.size() - anchors.size(), 3);
+    for(int v = 0; v < this->adj.size(); v++) {
+        int r = this->remap[v];
+        if(r != -1) {
+            estimate.row(r) = new_vertices[v];
+        }
+    }
+
+    for (int iterations = 0; iterations < 1000; iterations++) {
+        computeCubeRotations(estimate);
+
+
+        MatrixXf b = MatrixXf::Zero(this->adj.size() - anchors.size(), 3);
+        for(int i = 0; i < this->adj.size(); i++) {
+            int r = this->remap[i];
+
+            // this is an anchor; no entry in b
+            if(r == -1) continue;
+            Vector3f entry = Vector3f::Zero();
+            for(const auto& [neigh, _] : this->adj[i]) {
+                float w = this->W.coeff(i, neigh);
+
+                int n = this->remap[neigh];
+                if(n == -1) entry += w * new_vertices[neigh];
+                entry += 0.5 * w
+                             * (this->rotations[i] + this->rotations[neigh])
+                             * (cached_positions[i] - cached_positions[neigh]);
+            }
+
+            b.row(r) = entry;
+        }
+
+        estimate = this->sal.solve(b);
+    }
 
     for(int i = 0; i < this->adj.size(); i++) {
         int r = this->remap[i];

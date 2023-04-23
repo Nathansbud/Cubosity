@@ -24,6 +24,7 @@ public:
     // extra controls, dispatching to mesh/ARAP
     void subdivide();
     void denoise();
+    void cubify();
 
     Settings settings;
 private:
