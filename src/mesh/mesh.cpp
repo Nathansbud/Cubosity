@@ -157,6 +157,8 @@ void Mesh::simplify(const int n) {
         .detailLevel = numCollapses
     };
 
+
+
     HalfEdge::toVerts(_halfEdges, _vertices, _faces);
 }
 
@@ -172,8 +174,10 @@ void Mesh::expand() {
         }
 
         HalfEdge::ExpandInfo ei;
-        if(toExpand) HalfEdge::expand(toExpand, cr, ei, _halfEdges);
-        else {
+        if(toExpand) {
+            HalfEdge::expand(toExpand, cr, ei, _halfEdges);
+            HalfEdge::validate(_halfEdges);
+        } else {
             std::cout << "idk what went wrong here buck stacko" << std::endl;
         }
     }

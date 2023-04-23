@@ -1072,8 +1072,8 @@ void HalfEdge::simplify(
         // Populate our removed edges; our collapsed edge can be explicitly recreated,
         // the other two will need to be stitched together using our removed edge
         Edge* collapsedEdge = ci.deletedEdges[0];
-        Edge* removedEdge = ci.deletedEdges[2];
-        Edge* shiftedEdge = ci.deletedEdges[1];
+        Edge* removedEdge = ci.deletedEdges[1];
+        Edge* shiftedEdge = ci.deletedEdges[2];
 
         // Collapsed edge is between to be shifted & removed vertices
         cr.collapsedEID = collapsedEdge->eid;
