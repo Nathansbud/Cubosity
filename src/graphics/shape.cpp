@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "graphics/shader.h"
+#include <QString>
 
 using namespace Eigen;
 using namespace std;
@@ -25,31 +26,95 @@ Shape::Shape() :
     lastSelected(-1)
 {}
 
+
 // ================== Initialization and Updating
+
+void Shape::uninit() {
+    glDeleteBuffers(1, &m_surfaceVbo);
+    glDeleteBuffers(1, &m_surfaceIbo);
+
+    glDeleteVertexArrays(1, &m_surfaceVao);
+
+    if (m_textured) {
+        glDeleteTextures(1, &m_texture);
+        m_textured = false;
+    }
+
+    m_vertices.clear();
+}
+
+void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &triangles, const vector<Vector2f> &uvCords, const string texture) {
+    m_textured = true;
+
+    m_image = QImage(QString(texture.data()));
+    m_image = m_image.convertToFormat(QImage::Format_RGBA8888).mirrored();
+
+    glGenTextures(1, &m_texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_texture);
+
+    // Load image into texture
+    glTexImage2D(
+      GL_TEXTURE_2D,
+      0,
+      GL_RGBA,
+      m_image.width(),
+      m_image.height(),
+      0,
+      GL_RGBA,
+      GL_UNSIGNED_BYTE,
+      m_image.bits());
+
+    // Set min and mag filters' interpolation mode to linear
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    init(vertices, triangles, uvCords);
+}
 
 void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &triangles)
 {
+    init(vertices, triangles, vector<Vector2f>(vertices.size(), { 0.f, 0.f }));
+}
+
+
+void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &triangles, const vector<Vector2f> &uvCords)
+{
+    if (m_initialized) {
+        uninit();
+    }
+
+
+    m_initialized = true;
+
     m_vertices.clear();
     copy(vertices.begin(), vertices.end(), back_inserter(m_vertices));
 
     vector<Vector3f> verts;
     vector<Vector3f> normals;
     vector<Vector3f> colors;
+    vector<Vector2f> uv;
+
     vector<Vector3i> faces;
+
     faces.reserve(triangles.size());
 
     for (int s = 0; s < triangles.size() * 3; s+=3) faces.push_back(Vector3i(s, s + 1, s + 2));
-    updateMesh(triangles, vertices, verts, normals, colors);
+    updateMesh(triangles, vertices, uvCords, verts, normals, colors, uv);
 
     glGenBuffers(1, &m_surfaceVbo);
     glGenBuffers(1, &m_surfaceIbo);
     glGenVertexArrays(1, &m_surfaceVao);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_surfaceVbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3)), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3) + (uv.size() * 2)), nullptr, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * verts.size() * 3, static_cast<const void *>(verts.data()));
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * verts.size() * 3, sizeof(float) * normals.size() * 3, static_cast<const void *>(normals.data()));
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3)), sizeof(float) * colors.size() * 3, static_cast<const void *>(colors.data()));
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3)), sizeof(float) * uv.size() * 2, static_cast<const void *>(uv.data()));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_surfaceIbo);
@@ -63,7 +128,9 @@ void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &trian
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid *>(sizeof(float) * verts.size() * 3));
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid *>(sizeof(float) * (verts.size() * 3 + colors.size() * 3)));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid *>(sizeof(float) * (verts.size() * 3 + normals.size() * 3)));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid *>(sizeof(float) * (verts.size() * 3 + normals.size() * 3 + colors.size() * 3)));
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_surfaceIbo);
     glBindVertexArray(0);
@@ -73,6 +140,7 @@ void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &trian
     m_numSurfaceVertices = faces.size() * 3;
     m_verticesSize = vertices.size();
     m_faces = triangles;
+    m_uv = uvCords;
     m_red   = 0.5f + 0.5f * rand() / ((float) RAND_MAX);
     m_blue  = 0.5f + 0.5f * rand() / ((float) RAND_MAX);
     m_green = 0.5f + 0.5f * rand() / ((float) RAND_MAX);
@@ -87,14 +155,16 @@ void Shape::setVertices(const vector<Vector3f> &vertices)
     vector<Vector3f> verts;
     vector<Vector3f> normals;
     vector<Vector3f> colors;
+    vector<Vector2f> uv;
 
-    updateMesh(m_faces, vertices, verts, normals, colors);
+    updateMesh(m_faces, vertices, m_uv, verts, normals, colors, uv);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_surfaceVbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3)), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3) + (uv.size() * 2)), nullptr, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * verts.size() * 3, static_cast<const void *>(verts.data()));
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * verts.size() * 3, sizeof(float) * normals.size() * 3, static_cast<const void *>(normals.data()));
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3)), sizeof(float) * colors.size() * 3, static_cast<const void *>(colors.data()));
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3)), sizeof(float) * uv.size() * 2, static_cast<const void *>(uv.data()));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -112,16 +182,29 @@ void Shape::draw(Shader *shader, GLenum mode)
     switch(mode) {
     case GL_TRIANGLES:
     {
-        shader->setUniform("wire", 0);
-        shader->setUniform("model", m_modelMatrix);
         shader->setUniform("inverseTransposeModel", inverseTransposeModel);
-        shader->setUniform("red",   m_red);
-        shader->setUniform("green", m_green);
-        shader->setUniform("blue",  m_blue);
-        shader->setUniform("alpha", m_alpha);
+        shader->setUniform("model", m_modelMatrix);
+
+        if (m_textured) {
+            shader->setUniform("tex", 0); // sample slot 0
+
+            // Bind "texture" to slot 0
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, m_texture);
+        } else {
+            shader->setUniform("wire", 0);
+            shader->setUniform("red",   m_red);
+            shader->setUniform("green", m_green);
+            shader->setUniform("blue",  m_blue);
+            shader->setUniform("alpha", m_alpha);
+        }
+
         glBindVertexArray(m_surfaceVao);
         glDrawElements(mode, m_numSurfaceVertices, GL_UNSIGNED_INT, reinterpret_cast<GLvoid *>(0));
+
         glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
         break;
     }
     case GL_POINTS:
@@ -224,14 +307,17 @@ void Shape::selectHelper()
     vector<Vector3f> verts;
     vector<Vector3f> normals;
     vector<Vector3f> colors;
-    updateMesh(m_faces, m_vertices, verts, normals, colors);
+    vector<Vector2f> uv;
+    updateMesh(m_faces, m_vertices, m_uv, verts, normals, colors, uv);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_surfaceVbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3)), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3) + (uv.size() * 2)), nullptr, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * verts.size() * 3, static_cast<const void *>(verts.data()));
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * verts.size() * 3, sizeof(float) * normals.size() * 3, static_cast<const void *>(normals.data()));
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3)), sizeof(float) * colors.size() * 3, static_cast<const void *>(colors.data()));
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3)), sizeof(float) * uv.size() * 2, static_cast<const void *>(uv.data()));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 }
 
 Vector3f Shape::getNormal(const Vector3i& face)
@@ -247,12 +333,16 @@ Vector3f Shape::getNormal(const Vector3i& face)
 
 void Shape::updateMesh(const std::vector<Eigen::Vector3i> &faces,
                        const std::vector<Eigen::Vector3f> &vertices,
+                       const std::vector<Eigen::Vector2f> &uv_cords,
                        std::vector<Eigen::Vector3f>& verts,
                        std::vector<Eigen::Vector3f>& normals,
-                       std::vector<Eigen::Vector3f>& colors)
+                       std::vector<Eigen::Vector3f>& colors,
+                       std::vector<Eigen::Vector2f>& uv)
 {
     verts.reserve(faces.size() * 3);
     normals.reserve(faces.size() * 3);
+
+    uv = uv_cords;
 
     for (const Eigen::Vector3i& face : faces) {
         Vector3f n = getNormal(face);

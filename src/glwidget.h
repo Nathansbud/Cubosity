@@ -57,6 +57,7 @@ private:
     Camera  m_camera;
     Shader *m_defaultShader;
     Shader *m_pointShader;
+    Shader *m_textureShader;
 
     float m_movementScaling;
     float m_vertexSelectionThreshold;

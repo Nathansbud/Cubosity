@@ -112,4 +112,8 @@ public:
     {
         return m_shape.getAnchorPos(lastSelected, pos, ray, start);
     }
+
+    bool isTextured() {
+        return m_shape.isTextured();
+    }
 };

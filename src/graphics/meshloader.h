@@ -11,7 +11,9 @@ class MeshLoader
 public:
     static bool loadTriMesh(const std::string &filepath,
                             std::vector<Eigen::Vector3f> &vertices,
-                            std::vector<Eigen::Vector3i> &faces);
+                            std::vector<Eigen::Vector3i> &faces,
+                            std::vector<Eigen::Vector2f> &uv,
+                            std::string& texture);
 
 private:
     MeshLoader();

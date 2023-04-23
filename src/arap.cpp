@@ -16,6 +16,8 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
 {
     vector<Vector3f> vertices;
     vector<Vector3i> triangles;
+    vector<Vector2f> uv;
+    string texture;
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Stamortack: Interactive Cubosity Generator");
@@ -26,8 +28,10 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
         exit(1);
     }
 
+    string obj = parser.positionalArguments().at(0).toStdString();
+
     // If this doesn't work for you, remember to change your working directory
-    if (MeshLoader::loadTriMesh(parser.positionalArguments().at(0).toStdString(), vertices, triangles)) {
+    if (MeshLoader::loadTriMesh(obj, vertices, triangles, uv, texture)) {
         // our adjacency structure maps each vertex to its adjacent vertices
         this->adj = vector<std::map<Vindex, std::pair<Vindex, Vindex>>>(vertices.size());
         this->remap = vector<int>(vertices.size());
@@ -36,7 +40,17 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
         this->cached_positions = vertices;
         this->mesh.initFromVectors(vertices, triangles);
 
-        this->m_shape.init(vertices, triangles);
+        if (texture.size() != 0) {
+            QString objPath = QString(obj.data());
+            QString path = objPath.left(objPath.lastIndexOf('/'));
+            path += "/";
+            path.append(texture.data());
+
+            this->m_shape.init(vertices, triangles, uv, path.toStdString());
+        } else {
+            this->m_shape.init(vertices, triangles);
+        }
+
         this->computeAdjacency();
     }
 

@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <vector>
 #include <unordered_set>
+#include <QImage>
 
 #define EIGEN_DONT_VECTORIZE
 #define EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT
@@ -29,7 +30,19 @@ class Shape
 public:
     Shape();
 
-    void init(const std::vector<Eigen::Vector3f> &vertices, const std::vector<Eigen::Vector3i> &triangles);
+    void init(
+        const std::vector<Eigen::Vector3f> &vertices,
+        const std::vector<Eigen::Vector3i> &triangles,
+        const std::vector<Eigen::Vector2f> &uv,
+        const std::string texture);
+    void init(
+        const std::vector<Eigen::Vector3f> &vertices,
+        const std::vector<Eigen::Vector3i> &triangles,
+        const std::vector<Eigen::Vector2f> &uv);
+    void init(
+        const std::vector<Eigen::Vector3f> &vertices,
+        const std::vector<Eigen::Vector3i> &triangles);
+
     void setVertices(const std::vector<Eigen::Vector3f> &vertices);
 
     void setModelMatrix(const Eigen::Affine3f &model);
@@ -45,10 +58,19 @@ public:
     const std::vector<Eigen::Vector3i>& getFaces();
     const std::unordered_set<int>& getAnchors();
 
+    bool isTextured() {
+        return m_textured;
+    }
+
 private:
+    bool m_initialized = false;
+    bool m_textured = false;
+
     GLuint m_surfaceVao;
     GLuint m_surfaceVbo;
     GLuint m_surfaceIbo;
+    QImage m_image;
+    GLuint m_texture;
 
     unsigned int m_numSurfaceVertices;
     unsigned int m_verticesSize;
@@ -59,6 +81,7 @@ private:
 
     std::vector<Eigen::Vector3i> m_faces;
     std::vector<Eigen::Vector3f> m_vertices;
+    std::vector<Eigen::Vector2f> m_uv;
     std::unordered_set<int>      m_anchors;
 
     Eigen::Matrix4f m_modelMatrix;
@@ -70,7 +93,11 @@ private:
     Eigen::Vector3f getNormal(const Eigen::Vector3i& face);
     void updateMesh(const std::vector<Eigen::Vector3i> &triangles,
                     const std::vector<Eigen::Vector3f> &vertices,
+                    const std::vector<Eigen::Vector2f> &uv_cords,
                            std::vector<Eigen::Vector3f>& verts,
                            std::vector<Eigen::Vector3f>& normals,
-                           std::vector<Eigen::Vector3f>& colors);
+                           std::vector<Eigen::Vector3f>& colors,
+                           std::vector<Eigen::Vector2f>& uv);
+
+    void uninit();
 };
