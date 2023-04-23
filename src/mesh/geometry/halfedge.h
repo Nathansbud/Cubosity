@@ -152,8 +152,21 @@ namespace HalfEdge {
         int detailLevel = 0;
     };
 
+    struct ExpandInfo {
+        Vertex* createdVert;
+        std::vector<Edge*> createdEdges;
+        std::vector<Face*> createdFaces;
+        std::vector<HalfEdge*> createdHalfedges;
+
+        ExpandInfo() {
+            createdEdges.reserve(3);
+            createdHalfedges.reserve(6);
+            createdFaces.reserve(2);
+        }
+    };
+
     void simplify(std::unordered_set<HalfEdge*>& originalMesh, const int numTriangles, CollapseSequence& colSeq);
 
     // Expansion to undo a collapse
-    void expand(Vertex*, CollapseRecord&);
+    void expand(Vertex*, CollapseRecord&, ExpandInfo&, std::unordered_set<HalfEdge*>&);
 };

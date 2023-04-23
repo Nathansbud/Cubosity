@@ -474,7 +474,6 @@ HalfEdge::Vertex* HalfEdge::split(HalfEdge* halfEdge, std::unordered_set<HalfEdg
     newEdges.insert(he[4]->edge);
     he[4]->face = he[3]->face;
 
-
     // FACE he[5]->prev->halfEdge
     he[5]->twin = he[4];
     he[5]->next = prev;
@@ -628,10 +627,7 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
     return true;
 }
 
-void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record) {
-    // TODO: Any `nullptr` (or similar placeholder field) needs to be figured out!
-    // - How to return neighbors?
-
+void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record, ExpandInfo& ei, std::unordered_set<HalfEdge*>& halfEdges) {
     // Assume that vertex collapse was obtained by index, record.shiftedOrigin.vid;
     Vertex& shifted = record.shiftedOrigin;
     Vertex& removed = record.removedOrigin;
@@ -660,9 +656,15 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record) {
     Face* topFace = new Face();
     Face* bottomFace = new Face();
 
+    halfEdges.insert({ collapsedTop, collapsedBottom, removedInner, removedNext, shiftedInner, shiftedNext });
+    ei.createdVert = removedVertex;
+    ei.createdEdges = { collapsedEdge, removedEdge, shiftedEdge };
+    ei.createdFaces = { topFace, bottomFace };
+    ei.createdHalfedges = { collapsedTop, collapsedBottom, removedInner, removedNext, shiftedInner, shiftedNext };
+
     // Remake our collapsed edge!
-    collapsedEdge->eid = record.collapsedEID;
     collapsedEdge->halfEdge = collapsedTop;
+    collapsedEdge->eid = record.collapsedEID;
 
     collapsedTop->next = removedInner;
     collapsedTop->twin = collapsedBottom;
@@ -713,11 +715,11 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record) {
     shiftedEdge->eid = record.shiftedEID;
 
     // Remake our collapsed faces
-    topFace->fid = record.topFID;
     topFace->halfEdge = collapsedTop;
+    topFace->fid = record.topFID;
 
-    bottomFace->fid = record.bottomFID;
     bottomFace->halfEdge = collapsedBottom;
+    bottomFace->fid = record.bottomFID;
 
     removedVertex->point = removed.point;
     removedVertex->halfEdge = removedInner;
@@ -736,29 +738,30 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record) {
             // Our top edge was split, so point our edge to our inner halfedge
             priorTwin->twin = removedInner;
             priorTwin->edge = removedEdge;
+            removedInner->twin = priorTwin;
 
             // Resolve removed indeterminates, twin with current halfedge
             removedNext->twin = col;
             removedNext->vertex = v;
             removedNext->edge = col->edge;
-            removedInner->twin = priorTwin;
 
             col->twin = removedNext;
             col->edge->halfEdge = removedNext;
         } else if(record.wingVIDs.second == v->vid) {
             priorTwin->twin = shiftedInner;
             priorTwin->edge = shiftedEdge;
+            shiftedInner->twin = priorTwin;
 
             // Resolve shifted indeterminates, twin with h
             shiftedNext->twin = col;
             shiftedNext->vertex = v;
             shiftedNext->edge = col->edge;
-            shiftedInner->twin = priorTwin;
 
             col->twin = shiftedNext;
-            col->vertex = removedVertex;
-            col->edge->halfEdge = shiftedInner;
-        } else if(record.movedEdges.contains(col->edge->eid)) {
+            col->edge->halfEdge = shiftedNext;
+        }
+
+        if(record.movedEdges.contains(col->edge->eid)) {
             // Our edge was moved from removed -> shifted when collapsed, so move it back
             col->vertex = removedVertex;
         }

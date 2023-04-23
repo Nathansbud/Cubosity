@@ -171,7 +171,8 @@ void Mesh::expand() {
             }
         }
 
-        if(toExpand) HalfEdge::expand(toExpand, cr);
+        HalfEdge::ExpandInfo ei;
+        if(toExpand) HalfEdge::expand(toExpand, cr, ei, _halfEdges);
         else {
             std::cout << "idk what went wrong here buck stacko" << std::endl;
         }
