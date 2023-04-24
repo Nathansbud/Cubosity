@@ -49,7 +49,12 @@ bool MeshLoader::loadTriMesh(const string &filePath, vector<Vector3f> &vertices,
 
                 face[v] = idx.vertex_index;
 
-                uv.push_back({ attrib.texcoords[2*size_t(idx.texcoord_index)+0], attrib.texcoords[2*size_t(idx.texcoord_index)+1] });
+                if (idx.texcoord_index == -1) {
+                    uv.push_back({ 0.f, 0.f });
+                } else {
+                    uv.push_back({ attrib.texcoords[2*size_t(idx.texcoord_index)+0], attrib.texcoords[2*size_t(idx.texcoord_index)+1] });
+                }
+
             }
             faces.push_back(face);
 
