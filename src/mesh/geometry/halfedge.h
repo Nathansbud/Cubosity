@@ -29,6 +29,13 @@ namespace HalfEdge {
         int HID_MAX = -1;
     };
 
+    struct GeomMap {
+        GeomID bounds;
+        std::unordered_map<int, Vertex*> vertices;
+        std::unordered_map<int, Edge*> edges;
+        std::unordered_map<int, Face*> faces;
+    };
+
     struct Vertex {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -47,8 +54,15 @@ namespace HalfEdge {
         int fid = -1;
     };
 
-    void fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std::vector<Eigen::Vector3i>& faces, std::unordered_set<HalfEdge*>& halfEdges, GeomID& geom_ids);
+    void fromVerts(
+        const std::vector<Eigen::Vector3f>& vertices,
+        const std::vector<Eigen::Vector3i>& faces,
+        std::unordered_set<HalfEdge*>& halfEdges,
+        GeomMap&
+    );
+
     void toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces);
+
     void deleteMesh(std::unordered_set<HalfEdge*>& mesh);
     void validate(const std::unordered_set<HalfEdge*>& halfEdges);
 
@@ -165,8 +179,19 @@ namespace HalfEdge {
         }
     };
 
-    void simplify(std::unordered_set<HalfEdge*>& originalMesh, const int numTriangles, CollapseSequence& colSeq);
+    void simplify(
+        std::unordered_set<HalfEdge*>& originalMesh,
+        const int numTriangles,
+        CollapseSequence& colSeq,
+        GeomMap&
+    );
 
     // Expansion to undo a collapse
-    void expand(Vertex*, CollapseRecord&, ExpandInfo&, std::unordered_set<HalfEdge*>&);
+    void expand(
+        Vertex*,
+        CollapseRecord&,
+        ExpandInfo&,
+        std::unordered_set<HalfEdge*>&,
+        GeomMap&
+    );
 };

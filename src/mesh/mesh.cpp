@@ -17,8 +17,11 @@ void Mesh::initFromVectors(const vector<Vector3f> &vertices, const vector<Vector
     _vertices = vertices;
     _faces    = faces;
 
-    HalfEdge::fromVerts(_vertices, _faces, _halfEdges, _geomID);
-    cout << "Max IDs: " << _geomID.VID_MAX << "V, " << _geomID.FID_MAX << "F, " << _geomID.EID_MAX << "E" << endl;
+    HalfEdge::fromVerts(_vertices, _faces, _halfEdges, _geometry);
+    cout << "Max IDs: "
+         << _geometry.bounds.VID_MAX << "V, "
+         << _geometry.bounds.FID_MAX << "F, "
+         << _geometry.bounds.EID_MAX << "E" << endl;
 }
 
 void Mesh::loadFromFile(const string &filePath)
@@ -62,11 +65,14 @@ void Mesh::loadFromFile(const string &filePath)
         _vertices.emplace_back(attrib.vertices[i], attrib.vertices[i + 1], attrib.vertices[i + 2]);
     }
 
-    HalfEdge::fromVerts(_vertices, _faces, _halfEdges, _geomID);
+    HalfEdge::fromVerts(_vertices, _faces, _halfEdges, _geometry);
     HalfEdge::validate(_halfEdges);
 
     cout << "Loaded " << _faces.size() << " faces and " << _vertices.size() << " vertices" << endl;
-    cout << "Max IDs: " << _geomID.VID_MAX << "V, " << _geomID.FID_MAX << "F, " << _geomID.EID_MAX << "E" << endl;
+    cout << "Max IDs: "
+         << _geometry.bounds.VID_MAX << "V, "
+         << _geometry.bounds.FID_MAX << "F, "
+         << _geometry.bounds.EID_MAX << "E" << endl;
 }
 
 void Mesh::saveToFile(const string &filePath)
@@ -147,7 +153,7 @@ void Mesh::denoise(const float DIST_THRESH, const float SIGMA_C, const float SIG
 
 void Mesh::simplify(const int n) {
     HalfEdge::CollapseSequence cs;
-    HalfEdge::simplify(_halfEdges, n, cs);
+    HalfEdge::simplify(_halfEdges, n, cs, _geometry);
 
     saveProgressiveFile("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive/testing.stamp", cs);
 
@@ -157,30 +163,26 @@ void Mesh::simplify(const int n) {
         .detailLevel = numCollapses
     };
 
-
-
     HalfEdge::toVerts(_halfEdges, _vertices, _faces);
 }
 
-void Mesh::expand() {
+bool Mesh::expand() {
     if(_collapseState.detailLevel > 0) {
-        HalfEdge::CollapseRecord cr = _collapseState.sequence.collapses[--_collapseState.detailLevel];
-        HalfEdge::Vertex* toExpand = nullptr;
-        for (const HalfEdge::HalfEdge* halfEdge : _halfEdges) {
-            if(halfEdge->vertex->vid == cr.shiftedOrigin.vid) {
-                toExpand = halfEdge->vertex;
-                break;
-            }
+        HalfEdge::CollapseRecord cr = _collapseState.sequence.collapses[--_collapseState.detailLevel];        
+        HalfEdge::ExpandInfo ei;
+        HalfEdge::Vertex* toExpand = _geometry.vertices[cr.shiftedOrigin.vid];
+
+        if(!toExpand) {
+            std::cout << "idk what went wrong here buck stacko" << std::endl;
+            exit(1);
         }
 
-        HalfEdge::ExpandInfo ei;
-        if(toExpand) {
-            HalfEdge::expand(toExpand, cr, ei, _halfEdges);
-            HalfEdge::validate(_halfEdges);
-        } else {
-            std::cout << "idk what went wrong here buck stacko" << std::endl;
-        }
+        HalfEdge::expand(toExpand, cr, ei, _halfEdges, _geometry);
+        HalfEdge::validate(_halfEdges);
+
+        HalfEdge::toVerts(_halfEdges, _vertices, _faces);
+        return true;
     }
 
-    HalfEdge::toVerts(_halfEdges, _vertices, _faces);
+    return false;
 }
