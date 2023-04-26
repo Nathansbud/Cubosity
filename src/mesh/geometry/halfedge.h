@@ -144,6 +144,8 @@ namespace HalfEdge {
         Vertex removedOrigin;
         Vertex shiftedOrigin;
 
+        Eigen::MatrixXf affineMatrix;
+
         int collapsedEID;
         int removedEID;
         int shiftedEID;
@@ -178,6 +180,9 @@ namespace HalfEdge {
             createdFaces.reserve(2);
         }
     };
+
+    Eigen::MatrixXf computeNeighborMatrix(Vertex*);
+    Eigen::MatrixXf computeCollapseAffineMatrix(Vertex*);
 
     void simplify(
         std::unordered_set<HalfEdge*>& originalMesh,

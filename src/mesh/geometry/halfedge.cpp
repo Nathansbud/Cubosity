@@ -742,7 +742,7 @@ void HalfEdge::expand(
     bottomFace->halfEdge = collapsedBottom;
     bottomFace->fid = record.bottomFID;
 
-    removedVertex->point = removed.point;
+    removedVertex->point = collapsed->point + removed.point;
     removedVertex->halfEdge = removedInner;
     removedVertex->vid = removed.vid;
 
@@ -791,7 +791,7 @@ void HalfEdge::expand(
     } while(col != collapsed->halfEdge);
 
     // Return our collapsed vertex to its original position
-    collapsed->point = shifted.point;
+    collapsed->point = collapsed->point + shifted.point;
     collapsed->halfEdge = collapsedTop;
     // Unmodified: collapsed->vid
 }
@@ -1017,6 +1017,38 @@ void HalfEdge::updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::
     }
 }
 
+MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v) {
+    std::vector<Vertex*> neighs;
+    neighs.reserve(6);
+
+    HalfEdge* cur = v->halfEdge;
+    do {
+        neighs.push_back(cur->twin->vertex);
+        cur = cur->twin->next;
+    } while(cur != v->halfEdge);
+
+    MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
+    for(int i = 0; i < neighs.size(); i++) {
+        neighbors.col(i) = neighs[i]->point - v->point;
+    }
+
+    return neighbors;
+}
+
+MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
+    MatrixXf neighbors = computeNeighborMatrix(v);
+
+    Matrix3f inverse;
+    bool invertible;
+
+//    (neighbors * neighbors.transpose()).computeInverseWithCheck(inverse, invertible);
+//    if(!invertible) {
+//        // "Fix with Tikhonov regularization?"
+//    }
+
+    return inverse * neighbors;
+}
+
 void HalfEdge::simplify(
     std::unordered_set<HalfEdge*>& mesh,
     const int numTriangles,
@@ -1083,10 +1115,16 @@ void HalfEdge::simplify(
 
         // Populate our shifted and removed vertices
         Vertex* shiftedVert = ci.deletedVertices[0];
-        cr.shiftedOrigin = { .point = shiftedVert->point, .vid = shiftedVert->vid };
+        cr.shiftedOrigin = {
+            .point = shiftedVert->point - ci.collapsedVertex->point,
+            .vid = shiftedVert->vid
+        };
 
         Vertex* deletedVert = ci.deletedVertices[1];
-        cr.removedOrigin = { .point = deletedVert->point, .vid = deletedVert->vid };
+        cr.removedOrigin = {
+            .point = deletedVert->point - ci.collapsedVertex->point,
+            .vid = deletedVert->vid
+        };
 
         geometry.vertices[shiftedVert->vid] = ci.collapsedVertex;
         geometry.vertices[deletedVert->vid] = nullptr;
@@ -1121,6 +1159,8 @@ void HalfEdge::simplify(
 
         delete topFace;
         delete bottomFace;
+
+        cr.affineMatrix = computeCollapseAffineMatrix(ci.collapsedVertex);
 
         validate(mesh);
 

@@ -27,7 +27,7 @@ struct Orientation {
 };
 
 struct Settings {
-    int simplifyTarget = 500;
+    int simplifyTarget = 10;
 
     int collapseLevel = 0;
 

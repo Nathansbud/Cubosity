@@ -207,6 +207,7 @@ void ARAP::computeSystem() {
 
             float weight = this->W.coeff(v, neighbor);
             this->L.coeffRef(r, r) += weight;
+
             if(n != -1) {
                 this->L.coeffRef(r, n) -= weight;
             }

@@ -155,7 +155,7 @@ void Mesh::simplify(const int n) {
     HalfEdge::CollapseSequence cs;
     HalfEdge::simplify(_halfEdges, n, cs, _geometry);
 
-    saveProgressiveFile("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive/testing.stamp", cs);
+//    saveProgressiveFile("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive/testing.stamp", cs);
 
     int numCollapses = cs.collapses.size();
     this->_collapseState = {
