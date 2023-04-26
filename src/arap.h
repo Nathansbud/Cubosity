@@ -26,7 +26,7 @@ struct Settings {
 struct CubeData {
     Eigen::Vector3f z = Eigen::Vector3f::Random();
     Eigen::Vector3f u = Eigen::Vector3f::Random();
-    float rho = 1e-4f;
+    float rho = 1e-3f;
 };
 
 class ARAP

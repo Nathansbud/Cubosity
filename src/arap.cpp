@@ -210,11 +210,19 @@ void ARAP::computeRotations(const auto& newVerts, const int mover, const Vector3
 void ARAP::computeCubeRotations(const auto& newVerts) {
     for (int v = 0; v < this->adj.size(); v++) {
         const Vector3f& vertex = this->cached_positions[v];
+
         int remappedVertex = this->remap[v];
+        const Vector3f& newVertex = (remappedVertex != -1) ? newVerts.row(remappedVertex) : this->cached_positions[v];
+
         auto& neighborhood = this->adj[v];
         CubeData& currentCubeData = this->cubeData[v];
         Vector3f& vertexNormal = this->normals[v];
         float vertexArea = this->areas[v];
+
+//        std::cout << "Vertex: " << v << std::endl;
+//        std::cout << "V: " << vertex << std::endl;
+//        std::cout << "Normal: " << vertexNormal << std::endl;
+//        std::cout << "Area: " << vertexArea << "\n" << std::endl;
 
         // Compute the D and D' matrices
         // They are 3xN(i) where D is the old positions and D' is the new vertex positions of the neighbors
@@ -227,11 +235,11 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
         int neighborNum = 0;
         for(const auto& [neighborIndex, _] : this->adj[v]) {
             const Vector3f& oldNeighborPos = this->cached_positions[neighborIndex];
-            D.col(neighborNum) = oldNeighborPos;
+            D.col(neighborNum) = oldNeighborPos - vertex;
 
             int remappedNeighbor = this->remap[neighborIndex];
             const Vector3f& newNeighborPos = (remappedNeighbor != -1) ? newVerts.row(remappedNeighbor) : this->cached_positions[neighborIndex]; // don't allow anchors to move
-            Dprime.col(neighborNum) = newNeighborPos;
+            Dprime.col(neighborNum) = newNeighborPos - newVertex;
 
             neighborhoodW(neighborNum, neighborNum) = W.coeff(v, neighborIndex);
 
@@ -244,6 +252,10 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
         //   = D * W * Dprime' + n * rho * (z-u)'
         //   = Mpre + n * rho * (z-u)'
         MatrixXf Mprecomputed = D * neighborhoodW * Dprime.transpose();
+
+//        std::cout << "D:" << D << std::endl;
+//        std::cout << "D': " << Dprime << std::endl;
+//        std::cout << "Precomputed: " << Mprecomputed << std::endl;
 
         for (int i = 0; i < 100; i++) {
             MatrixXf M = Mprecomputed + (currentCubeData.rho * vertexNormal * (currentCubeData.z - currentCubeData.u).transpose());
@@ -260,10 +272,14 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
                 R = svd.matrixV() * newU.transpose();
             }
 
-            rotations[v] = R;
+            if (R.determinant() < 0) {
+                std::cout << "AHH" << std::endl;
+            }
+
+            this->rotations[v] = R;
 
 
-            float LAMBDA = 0.4f; // NOTE: pass in as setting eventually
+            float LAMBDA = 0.01f; // NOTE: pass in as setting eventually
             float MU = 10.f; // NOTE: pass in as setting eventually;
             float TAU = 2.f; // NOTE: pass in as a setting eventually;
             float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
@@ -289,7 +305,7 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
             // RHO and U step
             // credit: https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf
             // Section 3.4.1
-            float rResidual = (R * vertexNormal - currentCubeData.z).norm();
+            float rResidual = (currentCubeData.z - R* vertexNormal).norm();
             float sResidual = (-currentCubeData.rho * (currentCubeData.z - prevZ)).norm();
 
             if (rResidual > MU * sResidual) {
@@ -348,7 +364,8 @@ void ARAP::getPerVertexInfo() {
          vertexNormal /= adjacentFaces.size();
          this->normals[vert] = vertexNormal;
 
-         this->areas[vert] = vertexArea;
+         vertexArea /= adjacentFaces.size();
+         this->areas[vert] = vertexArea ;
     }
 }
 
@@ -372,7 +389,7 @@ float ARAP::getFaceArea(const Vector3i& face) {
     Eigen::Vector3f sideA = v2 - v1;
     Eigen::Vector3f sideB = v3 - v1;
 
-    return sideA.cross(sideB).norm() / 2;
+    return sideA.cross(sideB).norm();
 }
 
 
@@ -462,6 +479,7 @@ void ARAP::cubify() {
     std::vector<Eigen::Vector3f> new_vertices = m_shape.getVertices();
     const std::unordered_set<int>& anchors = m_shape.getAnchors();
 
+
     MatrixXf estimate = MatrixXf::Zero(this->adj.size() - anchors.size(), 3);
     for(int v = 0; v < this->adj.size(); v++) {
         int r = this->remap[v];
@@ -470,9 +488,11 @@ void ARAP::cubify() {
         }
     }
 
-    for (int iterations = 0; iterations < 1000; iterations++) {
+    for (int iterations = 0; iterations < 500; iterations++) {
         computeCubeRotations(estimate);
 
+//        std::cout << "Rotation:\n" << rotations[0] << std::endl;
+//        break;
 
         MatrixXf b = MatrixXf::Zero(this->adj.size() - anchors.size(), 3);
         for(int i = 0; i < this->adj.size(); i++) {
@@ -495,6 +515,10 @@ void ARAP::cubify() {
         }
 
         estimate = this->sal.solve(b);
+
+        if (iterations % 50 == 0) {
+            std::cout << iterations << std::endl;
+        }
     }
 
     for(int i = 0; i < this->adj.size(); i++) {

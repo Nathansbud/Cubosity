@@ -20,7 +20,6 @@ MeshLoader::MeshLoader() {}
 
 bool MeshLoader::loadTriMesh(const string &filePath, vector<Vector3f> &vertices, vector<Vector3i> &faces, vector<Vector2f> &uv, string& texture)
 {
-    std::cout << "HERE" << endl;
     tinyobj::attrib_t attrib;
     vector<tinyobj::shape_t> shapes;
     vector<tinyobj::material_t> materials;
