@@ -1041,11 +1041,29 @@ MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
     Matrix3f inverse;
     bool invertible;
 
-//    (neighbors * neighbors.transpose()).computeInverseWithCheck(inverse, invertible);
-//    if(!invertible) {
-//        // "Fix with Tikhonov regularization?"
-//    }
+    Matrix3f computed = (neighbors * neighbors.transpose());
+    computed.computeInverseWithCheck(inverse, invertible);
+    if(!invertible) {
+        // If non-invertible, attempt to compute use Tikhonov regularization (per paper)
+        Matrix3f gamma = 0.1f * Matrix3f::Identity();
+        (computed + gamma * gamma.transpose()).computeInverseWithCheck(inverse, invertible);
 
+        // If failed to regularize as well, just use pseudoinverse (which is expensive)
+        if(!invertible) {
+            double tolerance = 1e-12;
+            auto svd = computed.jacobiSvd(ComputeThinU | ComputeThinV);
+            MatrixXf svs = svd.singularValues();
+            for(int i = 0; i < svs.size(); i++) {
+                if(svs(i) < tolerance) svs(i) = 0;
+                else svs(i) = 1 / svs(i);
+            }
+
+            // Pseudoinverse if all else fails :(
+            return (svd.matrixV() * svs.asDiagonal() * svd.matrixU().transpose()) * neighbors;
+        }
+    }
+
+    // Either matrix was invertible, or regularization made it invertible
     return inverse * neighbors;
 }
 
