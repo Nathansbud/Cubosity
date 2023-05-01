@@ -55,6 +55,8 @@ MainWindow::MainWindow()
     denoiseBox->setLayout(denoiseLayout);
 
     addPushButton(vLayout, "Subdivide", &MainWindow::onSubdivideButtonClick);
+    addPushButton(vLayout, "Cubify",  &MainWindow::onCubifyButtonClick);
+
     vLayout->addWidget(simpBox);
     vLayout->addWidget(denoiseBox);
 
@@ -80,6 +82,8 @@ void MainWindow::onExpandButtonClick() { glWidget->expand(); }
 
 
 void MainWindow::onSubdivideButtonClick() { glWidget->subdivide(); }
+
+void MainWindow::onCubifyButtonClick() { glWidget->cubify(); }
 
 void MainWindow::onDenoiseButtonClick() { glWidget->denoise(); }
 void MainWindow::onDenoiseDistanceChange(double d) { glWidget->settings.denoiseDistance = d; }

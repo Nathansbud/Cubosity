@@ -43,6 +43,9 @@ private:
     // Subdivision
     void onSubdivideButtonClick();
 
+    // Cubify
+    void onCubifyButtonClick();
+
     // Denoising
     void onDenoiseButtonClick();
     void onDenoiseDistanceChange(double);

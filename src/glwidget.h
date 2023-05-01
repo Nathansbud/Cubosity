@@ -27,6 +27,7 @@ public:
 
     void subdivide();
     void denoise();
+    void cubify();
 
 
     Settings settings;

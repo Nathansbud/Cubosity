@@ -38,12 +38,20 @@ struct Settings {
     std::unordered_map<int, Orientation> orientationGroups;    
 };
 
+struct CubeData {
+    Eigen::Vector3f z = Eigen::Vector3f::Random();
+    Eigen::Vector3f u = Eigen::Vector3f::Random();
+    float rho = 1e-3f;
+};
+
 class ARAP
 {
 private:
     Shape m_shape;
 
     std::vector<std::map<Vindex, std::pair<Vindex, Vindex>>> adj;
+    std::vector<std::vector<int>> faceAdj;
+
     std::vector<Eigen::Matrix3f> rotations;
 
     Eigen::SparseMatrix<float> L;
@@ -63,12 +71,24 @@ private:
     Eigen::SimplicialLLT<Eigen::SparseMatrix<float>> sal;
 
     const int NUM_ITERATIONS = 4;
+
+    std::vector<CubeData> cubeData;
+
+    // get vertex normals and vertex areas
+    void getPerVertexInfo();
+
+    Eigen::Vector3f getFaceNormal(const Eigen::Vector3i& face);
+    float getFaceArea(const Eigen::Vector3i& face);
+
+    std::vector<Eigen::Vector3f> normals;
+    std::vector<float> areas;
 public:
     ARAP();
 
     Mesh mesh;
     void subdivide();
     void denoise(Settings&);
+    void cubify();
     void simplify(Settings&);
     void expand(Settings&);
 
@@ -80,6 +100,7 @@ public:
     void precompute();
     void computeWeights(const auto& verts);
     void computeRotations(const auto& newVerts, const int moving, const Eigen::Vector3f& moved);
+    void computeCubeRotations(const auto& newVerts);
     void computeSystem();
 
     // ================== Students, If You Choose To Modify The Code Below, It's On You
