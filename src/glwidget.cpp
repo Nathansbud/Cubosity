@@ -298,6 +298,9 @@ void GLWidget::keyReleaseEvent(QKeyEvent *event)
     }
 }
 
+void GLWidget::simplify() { m_arap.simplify(settings); }
+void GLWidget::expand() { m_arap.expand(settings); }
+
 void GLWidget::subdivide() {
     m_arap.subdivide();
 }

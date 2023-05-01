@@ -22,9 +22,13 @@ public:
     ~GLWidget();
 
     // extra controls, dispatching to mesh/ARAP
+    void simplify();
+    void expand();
+
     void subdivide();
     void denoise();
     void cubify();
+
 
     Settings settings;
 private:

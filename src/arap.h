@@ -6,9 +6,11 @@
 #include "Eigen/StdVector"
 #include "Eigen/Sparse"
 
+#include <QColor>
+
 #include <vector>
 #include <set>
-#include <map>
+#include <unordered_map>
 
 class Shader;
 
@@ -17,10 +19,23 @@ using Neighbors = std::map<Vindex, std::pair<Vindex, Vindex>>;
 
 // Mesh/ARAP parameter settings controllable via UI;
 // these live in GLwidget to make passing down a little bit less annoying
+struct Orientation {
+    double lambda;
+    QColor color;
+    Eigen::Matrix3f rotation;
+    std::set<Vindex> vertices;
+};
+
 struct Settings {
+    int simplifyTarget = 10;
+
+    int collapseLevel = 0;
+
     float denoiseDistance = 2.f;
     float denoiseSigma1 = 1.f;
     float denoiseSigma2 = 1.f;
+
+    std::unordered_map<int, Orientation> orientationGroups;    
 };
 
 struct CubeData {
@@ -74,6 +89,8 @@ public:
     void subdivide();
     void denoise(Settings&);
     void cubify();
+    void simplify(Settings&);
+    void expand(Settings&);
 
     void init(Eigen::Vector3f &min, Eigen::Vector3f &max);
     void computeAdjacency();

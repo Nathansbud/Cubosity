@@ -406,6 +406,7 @@ void ARAP::computeSystem() {
 
             float weight = this->W.coeff(v, neighbor);
             this->L.coeffRef(r, r) += weight;
+
             if(n != -1) {
                 this->L.coeffRef(r, n) -= weight;
             }
@@ -558,4 +559,32 @@ void ARAP::denoise(Settings& s) {
     this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
     this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
     this->cached_positions = vertices;
+}
+
+void ARAP::simplify(Settings& s) {
+    mesh.simplify(s.simplifyTarget);
+
+    const vector<Vector3f>& vertices = mesh.getVertices();
+    const vector<Vector3i>& faces = mesh.getFaces();
+
+    m_shape.init(vertices, faces);
+    computeAdjacency();
+    this->remap = vector<int>(vertices.size());
+    this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+    this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+    this->cached_positions = vertices;
+}
+
+void ARAP::expand(Settings& s) {
+    if(mesh.expand()) {
+        const vector<Vector3f>& vertices = mesh.getVertices();
+        const vector<Vector3i>& faces = mesh.getFaces();
+
+        m_shape.init(vertices, faces);
+        computeAdjacency();
+        this->remap = vector<int>(vertices.size());
+        this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+        this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+        this->cached_positions = vertices;
+    }
 }

@@ -19,6 +19,21 @@ namespace HalfEdge {
         Vertex* vertex;
         Edge* edge;
         Face* face;
+        int hid = -1;
+    };
+
+    struct GeomID {
+        int VID_MAX = -1;
+        int EID_MAX = -1;
+        int FID_MAX = -1;
+        int HID_MAX = -1;
+    };
+
+    struct GeomMap {
+        GeomID bounds;
+        std::unordered_map<int, Vertex*> vertices;
+        std::unordered_map<int, Edge*> edges;
+        std::unordered_map<int, Face*> faces;
     };
 
     struct Vertex {
@@ -26,18 +41,28 @@ namespace HalfEdge {
 
         HalfEdge* halfEdge;
         Eigen::Vector3f point;
+        int vid = -1;
     };
 
     struct Edge {
         HalfEdge* halfEdge;
+        int eid = -1;
     };
 
     struct Face {
         HalfEdge* halfEdge;
+        int fid = -1;
     };
 
-    void fromVerts(const std::vector<Eigen::Vector3f>& vertices, const std::vector<Eigen::Vector3i>& faces, std::unordered_set<HalfEdge*>& halfEdges);
+    void fromVerts(
+        const std::vector<Eigen::Vector3f>& vertices,
+        const std::vector<Eigen::Vector3i>& faces,
+        std::unordered_set<HalfEdge*>& halfEdges,
+        GeomMap&
+    );
+
     void toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces);
+
     void deleteMesh(std::unordered_set<HalfEdge*>& mesh);
     void validate(const std::unordered_set<HalfEdge*>& halfEdges);
 
@@ -70,12 +95,24 @@ namespace HalfEdge {
 
     struct CollapseInfo {
         Vertex* collapsedVertex;
-        std::unordered_set<Edge*> deletedEdges;
-        std::unordered_set<Vertex*> deletedVertices;
+
+        // Order: kept ID, removed ID
+        std::vector<Vertex*> deletedVertices;
+
+        // Order: collapsed ID, top ID, bottom ID
+        std::vector<Edge*> deletedEdges;
+
+        // Order: top ID, bottom ID
+        std::vector<Face*> deletedFaces;
+
+        std::unordered_set<int> movedEdges;
+
+        // Wing vert indices for collapse records to re-connect things
+        std::pair<int, int> wingVIDs;
     };
 
     bool collapse(Edge* edge, const Eigen::Vector3f& collapsePoint, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
-    bool collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoiht, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
+    bool collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint, CollapseInfo& ci, std::unordered_set<HalfEdge*>& halfEdges);
 
     struct DuplicateInfo {
         std::unordered_map<HalfEdge*, HalfEdge*> oldHalfEdgeToNewHalfEdge;
@@ -99,5 +136,67 @@ namespace HalfEdge {
 
     Eigen::Matrix4f quadric(const Vertex* vertex);
     void updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::multimap<float, std::tuple<Edge*, Eigen::Vector3f>>& errorToEdge, std::unordered_map<Edge*, float>& edgeToError);
-    void simplify(std::unordered_set<HalfEdge*>& originalMesh, const int numTriangles);
+
+    // For progressive meshes, we need to be able to walk back the sequence of collapses;
+    // hence, we need to get the IDs of all removed elements during the collapse, as well as neighbors
+    // that we need to return to their rightful place
+    struct CollapseRecord {
+        Vertex removedOrigin;
+        Vertex shiftedOrigin;
+
+        Eigen::MatrixXf affineMatrix;
+
+        int collapsedEID;
+        int removedEID;
+        int shiftedEID;
+
+        int topFID;
+        int bottomFID;
+
+        std::unordered_set<int> movedEdges;
+        std::pair<int, int> wingVIDs;
+    };
+
+    struct CollapseSequence {
+        std::vector<CollapseRecord> collapses;
+        int initialFaceResolution;
+        int finalFaceResolution;
+    };
+
+    struct CollapseState {
+        CollapseSequence sequence;
+        int detailLevel = 0;
+    };
+
+    struct ExpandInfo {
+        Vertex* createdVert;
+        std::vector<Edge*> createdEdges;
+        std::vector<Face*> createdFaces;
+        std::vector<HalfEdge*> createdHalfedges;
+
+        ExpandInfo() {
+            createdEdges.reserve(3);
+            createdHalfedges.reserve(6);
+            createdFaces.reserve(2);
+        }
+    };
+
+    Eigen::MatrixXf computeNeighborMatrix(Vertex*);
+    Eigen::MatrixXf computeCollapseAffineMatrix(Vertex*);
+
+    void simplify(
+        std::unordered_set<HalfEdge*>& originalMesh,
+        const int numTriangles,
+        CollapseSequence& colSeq,
+        GeomMap&
+    );
+
+    // Expansion to undo a collapse
+    void expand(
+        Vertex*,
+        CollapseRecord&,
+        ExpandInfo&,
+        std::unordered_set<HalfEdge*>&,
+        GeomMap&
+    );
 };
