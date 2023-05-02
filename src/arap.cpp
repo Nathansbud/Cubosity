@@ -262,7 +262,7 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
             MatrixXf M = Mprecomputed + (currentCubeData.rho * vertexNormal * (currentCubeData.z - currentCubeData.u).transpose());
 
             auto svd = M.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
-            Matrix3f R = svd.matrixV() * svd.matrixU().transpose();
+            R = svd.matrixV() * svd.matrixU().transpose();
 
             // if our determinant is negative, we found our reflection matrix instead of our rotation one;
             // invert our smallest singular value, per the paper
@@ -277,7 +277,7 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
                 std::cout << "AHH" << std::endl;
             }
 
-            float LAMBDA = 0.5f; // NOTE: pass in as setting eventually
+            float LAMBDA = 0.2f; // NOTE: pass in as setting eventually
             float MU = 10.f; // NOTE: pass in as setting eventually;
             float TAU = 2.f; // NOTE: pass in as a setting eventually;
             float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
