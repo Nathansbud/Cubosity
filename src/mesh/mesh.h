@@ -26,6 +26,8 @@ public:
 
     const std::vector<Eigen::Vector3f>& getVertices() { return _vertices; }
     const std::vector<Eigen::Vector3i>& getFaces() { return _faces; }
+
+    int getOrientationGroup(int vIndex) { return _indices.vertices[vIndex].orientationGroup; }
 private:
     std::vector<Eigen::Vector3f> _vertices;
     std::vector<Eigen::Vector3i> _faces;

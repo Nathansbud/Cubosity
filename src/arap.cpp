@@ -207,7 +207,7 @@ void ARAP::computeRotations(const auto& newVerts, const int mover, const Vector3
     }
 }
 
-void ARAP::computeCubeRotations(const auto& newVerts) {
+void ARAP::computeCubeRotations(const auto& newVerts, Settings& settings) {
     for (int v = 0; v < this->adj.size(); v++) {
         const Vector3f& vertex = this->cached_positions[v];
 
@@ -277,7 +277,7 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
                 std::cout << "AHH" << std::endl;
             }
 
-            float LAMBDA = 0.2f; // NOTE: pass in as setting eventually
+            float LAMBDA = settings.orientationGroups[this->mesh.getOrientationGroup(v)]->lambda->value();
             float MU = 10.f; // NOTE: pass in as setting eventually;
             float TAU = 2.f; // NOTE: pass in as a setting eventually;
             float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
@@ -473,7 +473,7 @@ void ARAP::move(int vertex, Vector3f targetPosition) {
     m_shape.setVertices(new_vertices);
 }
 
-void ARAP::cubify() {
+void ARAP::cubify(Settings& settings) {
     const vector<Vector3f>& vertices = mesh.getVertices();
 
     std::vector<Eigen::Vector3f> new_vertices = m_shape.getVertices();
@@ -489,7 +489,7 @@ void ARAP::cubify() {
     }
 
     for (int iterations = 0; iterations < 500; iterations++) {
-        computeCubeRotations(estimate);
+        computeCubeRotations(estimate, settings);
 
 //        std::cout << "Rotation:\n" << rotations[0] << std::endl;
 //        break;

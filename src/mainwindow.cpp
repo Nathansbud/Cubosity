@@ -67,12 +67,10 @@ MainWindow::MainWindow()
     orientLayout = new QVBoxLayout();
     orientBox->setLayout(orientLayout);
 
-    OrientationGroup* baseOrientation = new OrientationGroup();
-    baseOrientation->color = QColor( );
+    addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
+    OrientationGroup* baseOrientation = new OrientationGroup(QColor::fromRgb(255, 0, 0));
 
     addOrientationGroup(baseOrientation);
-    addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
-
     rotLayout->addWidget(orientBox);
 
     this->showFullScreen();
@@ -98,17 +96,12 @@ void MainWindow::onDenoiseSig1Change(double s) { glWidget->settings.denoiseSigma
 void MainWindow::onDenoiseSig2Change(double s) { glWidget->settings.denoiseSigma2 = s; }
 
 void MainWindow::createOrientationGroup() {
-    OrientationGroup* ng = new OrientationGroup();
+    OrientationGroup* ng = new OrientationGroup(QColor::fromRgb(rand() % 255 + 1, rand() % 255 + 1, rand() % 255 + 1));
     addOrientationGroup(ng);
 }
 
 void MainWindow::addOrientationGroup(OrientationGroup* ng) {
-    glWidget->settings.orientationGroups.insert({ng->groupID, {
-        .lambda = ng->lambda->value(),
-        .color = ng->color,
-        .rotation = static_cast<Matrix3f>(ng->rotation)
-    }});
-
+    glWidget->settings.orientationGroups.insert({ng->groupID, ng});
     orientLayout->addWidget(ng);
 }
 

@@ -36,8 +36,13 @@ namespace HalfEdge {
         std::unordered_map<int, Face*> faces;
     };
 
+    struct VertexProperties {
+        int VID;
+        int orientationGroup;
+    };
+
     struct IndexMap {
-        std::map<int, int> vertices;
+        std::map<int, VertexProperties> vertices;
         std::map<int, int> faces;
     };
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "interface/OrientationGroup.h"
 #include "graphics/shape.h"
 #include "mesh/mesh.h"
 #include "Eigen/StdList"
@@ -23,7 +24,6 @@ struct Orientation {
     double lambda;
     QColor color;
     Eigen::Matrix3f rotation;
-    std::set<Vindex> vertices;
 };
 
 struct Settings {
@@ -35,7 +35,7 @@ struct Settings {
     float denoiseSigma1 = 1.f;
     float denoiseSigma2 = 1.f;
 
-    std::unordered_map<int, Orientation> orientationGroups;    
+    std::unordered_map<int, OrientationGroup*> orientationGroups;
 };
 
 struct CubeData {
@@ -88,7 +88,7 @@ public:
     Mesh mesh;
     void subdivide();
     void denoise(Settings&);
-    void cubify();
+    void cubify(Settings&);
     void simplify(Settings&);
     void expand(Settings&);
 
@@ -100,7 +100,7 @@ public:
     void precompute();
     void computeWeights(const auto& verts);
     void computeRotations(const auto& newVerts, const int moving, const Eigen::Vector3f& moved);
-    void computeCubeRotations(const auto& newVerts);
+    void computeCubeRotations(const auto& newVerts, Settings&);
     void computeSystem();
 
     // ================== Students, If You Choose To Modify The Code Below, It's On You

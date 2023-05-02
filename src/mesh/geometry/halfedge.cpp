@@ -139,7 +139,7 @@ void HalfEdge::toVerts(
             vert1 = vIndex;
             vertexToIndex[halfEdge->vertex] = vIndex;
             vertices.push_back(halfEdge->vertex->point);
-            indexTo.vertices.insert({vIndex++, halfEdge->vertex->vid});
+            indexTo.vertices.insert({vIndex++, {halfEdge->vertex->vid, 0}});
         }
 
         if (vertexToIndex.contains(halfEdge->next->vertex)) {
@@ -148,7 +148,7 @@ void HalfEdge::toVerts(
             vert2 = vIndex;
             vertexToIndex[halfEdge->next->vertex] = vIndex;
             vertices.push_back(halfEdge->next->vertex->point);
-            indexTo.vertices.insert({vIndex++, halfEdge->next->vertex->vid});
+            indexTo.vertices.insert({vIndex++, {halfEdge->next->vertex->vid, 0}});
         }
 
         if (vertexToIndex.contains(halfEdge->next->next->vertex)) {
@@ -157,7 +157,7 @@ void HalfEdge::toVerts(
             vert3 = vIndex;
             vertexToIndex[halfEdge->next->next->vertex] = vIndex;
             vertices.push_back(halfEdge->next->next->vertex->point);
-            indexTo.vertices.insert({vIndex++, halfEdge->next->next->vertex->vid});
+            indexTo.vertices.insert({vIndex++, {halfEdge->next->next->vertex->vid, 0}});
         }
 
         faces.push_back(Eigen::Vector3i{vert1, vert2, vert3});
