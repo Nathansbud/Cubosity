@@ -28,6 +28,8 @@ public:
     const std::vector<Eigen::Vector3i>& getFaces() { return _faces; }
 
     int getOrientationGroup(int vIndex) { return _indices.vertices[vIndex].orientationGroup; }
+    void updatePositions(const std::vector<Eigen::Vector3f> &vertices);
+
 private:
     std::vector<Eigen::Vector3f> _vertices;
     std::vector<Eigen::Vector3i> _faces;

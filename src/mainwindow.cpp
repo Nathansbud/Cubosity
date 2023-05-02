@@ -43,6 +43,7 @@ MainWindow::MainWindow()
     addSpinBox(simpLayout, "", 4, 10000000, 1, glWidget->settings.simplifyTarget, &MainWindow::onSimplifyTargetChange);
     addPushButton(simpLayout, "Simplify", &MainWindow::onSimplifyButtonClick);
     addPushButton(simpLayout, "Expand", &MainWindow::onExpandButtonClick);
+    addPushButton(simpLayout, "Expand All", &MainWindow::onExpandAllButtonClick);
 
     simpBox->setLayout(simpLayout);
 
@@ -84,7 +85,7 @@ void MainWindow::onSimplifyButtonClick() { glWidget->simplify(); }
 void MainWindow::onSimplifyTargetChange(int f) { glWidget->settings.simplifyTarget = f; }
 
 void MainWindow::onExpandButtonClick() { glWidget->expand(); }
-
+void MainWindow::onExpandAllButtonClick() { glWidget->expandAll(); }
 
 void MainWindow::onSubdivideButtonClick() { glWidget->subdivide(); }
 

@@ -24,6 +24,7 @@ public:
     // extra controls, dispatching to mesh/ARAP
     void simplify();
     void expand();
+    void expandAll();
 
     void subdivide();
     void denoise();
@@ -82,4 +83,5 @@ private:
     int m_lastSelectedVertex = -1;
 
     bool simplifying = false;
+    bool expanding = false;
 };

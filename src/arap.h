@@ -90,7 +90,7 @@ public:
     void denoise(Settings&);
     void cubify(Settings&);
     void simplify(Settings&);
-    void expand(Settings&);
+    bool expand(Settings&);
 
     void init(Eigen::Vector3f &min, Eigen::Vector3f &max);
     void computeAdjacency();

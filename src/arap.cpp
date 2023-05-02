@@ -530,6 +530,8 @@ void ARAP::cubify(Settings& settings) {
     }
 
     m_shape.setVertices(new_vertices);
+    mesh.updatePositions(new_vertices);
+
 //    computeAdjacency();
 //    this->remap = vector<int>(vertices.size());
 //    this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
@@ -558,6 +560,7 @@ void ARAP::denoise(Settings& s) {
     const vector<Vector3i>& faces = mesh.getFaces();
 
     m_shape.init(vertices, faces);
+
     computeAdjacency();
     this->remap = vector<int>(vertices.size());
     this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
@@ -572,6 +575,7 @@ void ARAP::simplify(Settings& s) {
     const vector<Vector3i>& faces = mesh.getFaces();
 
     m_shape.init(vertices, faces);
+
     computeAdjacency();
     this->remap = vector<int>(vertices.size());
     this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
@@ -579,16 +583,20 @@ void ARAP::simplify(Settings& s) {
     this->cached_positions = vertices;
 }
 
-void ARAP::expand(Settings& s) {
+bool ARAP::expand(Settings& s) {
     if(mesh.expand()) {
         const vector<Vector3f>& vertices = mesh.getVertices();
         const vector<Vector3i>& faces = mesh.getFaces();
 
         m_shape.init(vertices, faces);
+
         computeAdjacency();
         this->remap = vector<int>(vertices.size());
         this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
         this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
         this->cached_positions = vertices;
+        return true;
     }
+
+    return false;
 }

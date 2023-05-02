@@ -24,6 +24,15 @@ void Mesh::initFromVectors(const vector<Vector3f> &vertices, const vector<Vector
          << _geometry.bounds.EID_MAX << "E" << endl;
 }
 
+void Mesh::updatePositions(const vector<Vector3f>& vertices) {
+    std::cout << _geometry.vertices.size() << std::endl;
+
+    for (int i = 0; i < vertices.size(); i++) {
+
+        _geometry.vertices[_indices.vertices[i].VID]->point = vertices[i];
+    }
+}
+
 void Mesh::loadFromFile(const string &filePath)
 {
     tinyobj::attrib_t attrib;

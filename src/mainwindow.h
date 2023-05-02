@@ -42,6 +42,7 @@ private:
     void onSimplifyTargetChange(int);
 
     void onExpandButtonClick();
+    void onExpandAllButtonClick();
 
     // Subdivision
     void onSubdivideButtonClick();
