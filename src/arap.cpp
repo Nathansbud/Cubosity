@@ -257,6 +257,7 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
 //        std::cout << "D': " << Dprime << std::endl;
 //        std::cout << "Precomputed: " << Mprecomputed << std::endl;
 
+        Matrix3f R;
         for (int i = 0; i < 100; i++) {
             MatrixXf M = Mprecomputed + (currentCubeData.rho * vertexNormal * (currentCubeData.z - currentCubeData.u).transpose());
 
@@ -275,8 +276,6 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
             if (R.determinant() < 0) {
                 std::cout << "AHH" << std::endl;
             }
-
-            this->rotations[v] = R;
 
             float LAMBDA = 0.5f; // NOTE: pass in as setting eventually
             float MU = 10.f; // NOTE: pass in as setting eventually;
@@ -333,6 +332,8 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
                 break;
             }
         }
+
+        this->rotations[v] = R;
     }
 }
 
@@ -460,7 +461,6 @@ void ARAP::move(int vertex, Vector3f targetPosition) {
 
         estimate = this->sal.solve(b);
     }
-
 
     for(int i = 0; i < this->adj.size(); i++) {
         int r = this->remap[i];

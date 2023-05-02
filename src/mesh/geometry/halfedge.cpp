@@ -111,43 +111,53 @@ void HalfEdge::fromVerts(
     };
 }
 
-void HalfEdge::toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces) {
+void HalfEdge::toVerts(
+    const std::unordered_set<HalfEdge*>& halfEdges,
+    std::vector<Eigen::Vector3f>& vertices,
+    std::vector<Eigen::Vector3i>& faces,
+    IndexMap& indexTo
+) {
     vertices.clear();
     faces.clear();
+    indexTo.faces.clear();
+    indexTo.vertices.clear();
 
     std::unordered_set<Face*> foundFaces;
     std::unordered_map<Vertex*, int> vertexToIndex;
 
-    int curIndex = 0;
+    int vIndex = 0;
+    int fIndex = 0;
     for (HalfEdge* halfEdge : halfEdges) {
-        if (foundFaces.contains(halfEdge->face)) {
-            continue;
-        }
+        if (foundFaces.contains(halfEdge->face)) continue;
         foundFaces.insert(halfEdge->face);
+        indexTo.faces.insert({fIndex++, halfEdge->face->fid});
 
         int vert1, vert2, vert3;
         if (vertexToIndex.contains(halfEdge->vertex)) {
             vert1 = vertexToIndex[halfEdge->vertex];
         } else {
-            vert1 = curIndex++;
-            vertexToIndex[halfEdge->vertex] = vert1;
+            vert1 = vIndex;
+            vertexToIndex[halfEdge->vertex] = vIndex;
             vertices.push_back(halfEdge->vertex->point);
+            indexTo.vertices.insert({vIndex++, halfEdge->vertex->vid});
         }
 
         if (vertexToIndex.contains(halfEdge->next->vertex)) {
             vert2 = vertexToIndex[halfEdge->next->vertex];
         } else {
-            vert2 = curIndex++;
-            vertexToIndex[halfEdge->next->vertex] = vert2;
+            vert2 = vIndex;
+            vertexToIndex[halfEdge->next->vertex] = vIndex;
             vertices.push_back(halfEdge->next->vertex->point);
+            indexTo.vertices.insert({vIndex++, halfEdge->next->vertex->vid});
         }
 
         if (vertexToIndex.contains(halfEdge->next->next->vertex)) {
             vert3 = vertexToIndex[halfEdge->next->next->vertex];
         } else {
-            vert3 = curIndex++;
-            vertexToIndex[halfEdge->next->next->vertex] = vert3;
+            vert3 = vIndex;
+            vertexToIndex[halfEdge->next->next->vertex] = vIndex;
             vertices.push_back(halfEdge->next->next->vertex->point);
+            indexTo.vertices.insert({vIndex++, halfEdge->next->next->vertex->vid});
         }
 
         faces.push_back(Eigen::Vector3i{vert1, vert2, vert3});

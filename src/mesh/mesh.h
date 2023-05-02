@@ -24,19 +24,15 @@ public:
 
     bool expand();
 
-    const std::vector<Eigen::Vector3f>& getVertices() {
-        return _vertices;
-    }
-
-    const std::vector<Eigen::Vector3i>& getFaces() {
-        return _faces;
-    }
-
+    const std::vector<Eigen::Vector3f>& getVertices() { return _vertices; }
+    const std::vector<Eigen::Vector3i>& getFaces() { return _faces; }
 private:
     std::vector<Eigen::Vector3f> _vertices;
     std::vector<Eigen::Vector3i> _faces;
     std::unordered_set<HalfEdge::HalfEdge*> _halfEdges;
 
+    // Mapping from OpenGL ordering to geometry element ID
     HalfEdge::GeomMap _geometry;
+    HalfEdge::IndexMap _indices;
     HalfEdge::CollapseState _collapseState;
 };

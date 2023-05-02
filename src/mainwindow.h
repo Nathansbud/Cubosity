@@ -1,5 +1,7 @@
 #pragma once
 
+#include "interface/OrientationGroup.h"
+
 #include <QMainWindow>
 #include <QBoxLayout>
 #include <QLabel>
@@ -24,7 +26,7 @@ private:
     QVBoxLayout* orientLayout;
 //    QLabel* currentLOD = 0;
 
-    void addOrientationGroup();
+    void createOrientationGroup();
     void addOrientationGroup(OrientationGroup*);
 
     void addHeading(QBoxLayout *layout, QString text);

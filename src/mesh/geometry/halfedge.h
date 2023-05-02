@@ -36,6 +36,11 @@ namespace HalfEdge {
         std::unordered_map<int, Face*> faces;
     };
 
+    struct IndexMap {
+        std::map<int, int> vertices;
+        std::map<int, int> faces;
+    };
+
     struct Vertex {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -61,7 +66,12 @@ namespace HalfEdge {
         GeomMap&
     );
 
-    void toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces);
+    void toVerts(
+        const std::unordered_set<HalfEdge*>& halfEdges,
+        std::vector<Eigen::Vector3f>& vertices,
+        std::vector<Eigen::Vector3i>& faces,
+        IndexMap&
+    );
 
     void deleteMesh(std::unordered_set<HalfEdge*>& mesh);
     void validate(const std::unordered_set<HalfEdge*>& halfEdges);

@@ -71,7 +71,7 @@ MainWindow::MainWindow()
     baseOrientation->color = QColor( );
 
     addOrientationGroup(baseOrientation);
-    addPushButton(orientLayout, "Add Group", &MainWindow::addOrientationGroup);
+    addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
 
     rotLayout->addWidget(orientBox);
 
@@ -97,7 +97,7 @@ void MainWindow::onDenoiseDistanceChange(double d) { glWidget->settings.denoiseD
 void MainWindow::onDenoiseSig1Change(double s) { glWidget->settings.denoiseSigma1 = s; }
 void MainWindow::onDenoiseSig2Change(double s) { glWidget->settings.denoiseSigma2 = s; }
 
-void MainWindow::addOrientationGroup() {
+void MainWindow::createOrientationGroup() {
     OrientationGroup* ng = new OrientationGroup();
     addOrientationGroup(ng);
 }
