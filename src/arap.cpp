@@ -279,7 +279,7 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
             this->rotations[v] = R;
 
 
-            float LAMBDA = 0.01f; // NOTE: pass in as setting eventually
+            float LAMBDA = 0.2f; // NOTE: pass in as setting eventually
             float MU = 10.f; // NOTE: pass in as setting eventually;
             float TAU = 2.f; // NOTE: pass in as a setting eventually;
             float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
@@ -480,7 +480,6 @@ void ARAP::cubify() {
     std::vector<Eigen::Vector3f> new_vertices = m_shape.getVertices();
     const std::unordered_set<int>& anchors = m_shape.getAnchors();
 
-
     MatrixXf estimate = MatrixXf::Zero(this->adj.size() - anchors.size(), 3);
     for(int v = 0; v < this->adj.size(); v++) {
         int r = this->remap[v];
@@ -489,7 +488,7 @@ void ARAP::cubify() {
         }
     }
 
-    for (int iterations = 0; iterations < 500; iterations++) {
+    for (int iterations = 0; iterations < 1; iterations++) {
         computeCubeRotations(estimate);
 
 //        std::cout << "Rotation:\n" << rotations[0] << std::endl;
@@ -517,9 +516,9 @@ void ARAP::cubify() {
 
         estimate = this->sal.solve(b);
 
-        if (iterations % 50 == 0) {
-            std::cout << iterations << std::endl;
-        }
+//        if (iterations % 50 == 0) {
+//            std::cout << iterations << std::endl;
+//        }
     }
 
     for(int i = 0; i < this->adj.size(); i++) {

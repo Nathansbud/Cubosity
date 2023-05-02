@@ -82,4 +82,6 @@ private:
     int m_lastSelectedVertex = -1;
 
     bool simplifying = false;
+    bool cubing = false;
+    int cubeIter = false;
 };
