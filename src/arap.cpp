@@ -278,8 +278,7 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
 
             this->rotations[v] = R;
 
-
-            float LAMBDA = 0.01f; // NOTE: pass in as setting eventually
+            float LAMBDA = 0.5f; // NOTE: pass in as setting eventually
             float MU = 10.f; // NOTE: pass in as setting eventually;
             float TAU = 2.f; // NOTE: pass in as a setting eventually;
             float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
@@ -531,6 +530,11 @@ void ARAP::cubify() {
     }
 
     m_shape.setVertices(new_vertices);
+//    computeAdjacency();
+//    this->remap = vector<int>(vertices.size());
+//    this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+//    this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+//    this->cached_positions = vertices;
 }
 
 void ARAP::subdivide() {

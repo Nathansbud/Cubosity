@@ -309,9 +309,7 @@ void GLWidget::denoise() {
     m_arap.denoise(settings);
 }
 
-void GLWidget::cubify() {
-    m_arap.cubify();
-}
+void GLWidget::cubify() { m_arap.cubify(); }
 
 // ================== Physics Tick
 

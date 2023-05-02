@@ -25,6 +25,7 @@ private:
 //    QLabel* currentLOD = 0;
 
     void addOrientationGroup();
+    void addOrientationGroup(OrientationGroup*);
 
     void addHeading(QBoxLayout *layout, QString text);
     void addLabel(QBoxLayout *layout, QString text);

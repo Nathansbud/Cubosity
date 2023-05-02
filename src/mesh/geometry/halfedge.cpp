@@ -642,9 +642,15 @@ void HalfEdge::expand(
     std::unordered_set<HalfEdge*>& halfEdges,
     GeomMap& geometry
 ) {
+    // While debugging: turn on/off affine new positions
+    bool USE_AFFINE = true;
+
     // Assume that vertex collapse was obtained by index, record.shiftedOrigin.vid;
     Vertex& shifted = record.shiftedOrigin;
     Vertex& removed = record.removedOrigin;
+
+    // Affine transform matrix
+    Matrix3f transform = computeNeighborMatrix(collapsed) * record.affineMatrix.transpose();
 
     if(collapsed->vid != shifted.vid) {
         std::cerr << "Cannot expand vertex " << collapsed->vid << " using collapse record for " << shifted.vid << std::endl;
@@ -742,7 +748,7 @@ void HalfEdge::expand(
     bottomFace->halfEdge = collapsedBottom;
     bottomFace->fid = record.bottomFID;
 
-    removedVertex->point = collapsed->point + removed.point;
+    removedVertex->point = collapsed->point + (USE_AFFINE ? transform : Matrix3f::Identity()) * removed.point;
     removedVertex->halfEdge = removedInner;
     removedVertex->vid = removed.vid;
 
@@ -791,7 +797,7 @@ void HalfEdge::expand(
     } while(col != collapsed->halfEdge);
 
     // Return our collapsed vertex to its original position
-    collapsed->point = collapsed->point + shifted.point;
+    collapsed->point = collapsed->point + (USE_AFFINE ? transform : Matrix3f::Identity()) * shifted.point;
     collapsed->halfEdge = collapsedTop;
     // Unmodified: collapsed->vid
 }

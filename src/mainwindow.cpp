@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 
 #include "interface/OrientationGroup.h"
+#include "interface/MatrixInput.h"
+
 #include <QMainWindow>
 #include <QSlider>
 #include <QSpinBox>
@@ -65,9 +67,14 @@ MainWindow::MainWindow()
     orientLayout = new QVBoxLayout();
     orientBox->setLayout(orientLayout);
 
+    OrientationGroup* baseOrientation = new OrientationGroup();
+    baseOrientation->color = QColor( );
+
+    addOrientationGroup(baseOrientation);
     addPushButton(orientLayout, "Add Group", &MainWindow::addOrientationGroup);
 
     rotLayout->addWidget(orientBox);
+
     this->showFullScreen();
 }
 
@@ -92,10 +99,14 @@ void MainWindow::onDenoiseSig2Change(double s) { glWidget->settings.denoiseSigma
 
 void MainWindow::addOrientationGroup() {
     OrientationGroup* ng = new OrientationGroup();
+    addOrientationGroup(ng);
+}
+
+void MainWindow::addOrientationGroup(OrientationGroup* ng) {
     glWidget->settings.orientationGroups.insert({ng->groupID, {
         .lambda = ng->lambda->value(),
         .color = ng->color,
-        .rotation = ng->rotation
+        .rotation = static_cast<Matrix3f>(ng->rotation)
     }});
 
     orientLayout->addWidget(ng);

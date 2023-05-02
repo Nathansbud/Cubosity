@@ -55,6 +55,7 @@ add_executable(${PROJECT_NAME}
 
     # UI elements
     src/interface/OrientationGroup.h
+    src/interface/MatrixInput.h
 
     src/interface/UIUtil.h
     src/interface/UIUtil.cpp
