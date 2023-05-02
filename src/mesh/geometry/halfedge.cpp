@@ -660,7 +660,7 @@ void HalfEdge::expand(
     Vertex& removed = record.removedOrigin;
 
     // Affine transform matrix
-    Matrix3f transform = computeNeighborMatrix(collapsed) * record.affineMatrix.transpose();
+    Matrix3f transform = computeNeighborMatrix(collapsed, record.neighborOrder) * record.affineMatrix.transpose();
 
     if(collapsed->vid != shifted.vid) {
         std::cerr << "Cannot expand vertex " << collapsed->vid << " using collapse record for " << shifted.vid << std::endl;
@@ -1033,7 +1033,24 @@ void HalfEdge::updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::
     }
 }
 
-MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v) {
+MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v, std::vector<int>& order) {
+    std::map<int, Vertex*> neighs;
+
+    HalfEdge* cur = v->halfEdge;
+    do {
+        neighs.insert({cur->twin->vertex->vid, cur->twin->vertex});
+        cur = cur->twin->next;
+    } while(cur != v->halfEdge);
+
+    MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
+    for(int i = 0; i < order.size(); i++) {
+        neighbors.col(i) = neighs[order[i]]->point - v->point;
+    }
+
+    return neighbors;
+}
+
+std::pair<MatrixXf, std::vector<int>> HalfEdge::computeNeighborMatrix(Vertex* v) {
     std::vector<Vertex*> neighs;
     neighs.reserve(6);
 
@@ -1043,16 +1060,19 @@ MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v) {
         cur = cur->twin->next;
     } while(cur != v->halfEdge);
 
+    std::vector<int> order(neighs.size());
+
     MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
     for(int i = 0; i < neighs.size(); i++) {
         neighbors.col(i) = neighs[i]->point - v->point;
+        order[i] = neighs[i]->vid;
     }
 
-    return neighbors;
+    return {neighbors, order};
 }
 
-MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
-    MatrixXf neighbors = computeNeighborMatrix(v);
+std::pair<MatrixXf, std::vector<int>> HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
+    auto [neighbors, order] = computeNeighborMatrix(v);
 
     Matrix3f inverse;
     bool invertible;
@@ -1075,12 +1095,12 @@ MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
             }
 
             // Pseudoinverse if all else fails :(
-            return (svd.matrixV() * svs.asDiagonal() * svd.matrixU().transpose()) * neighbors;
+            return {(svd.matrixV() * svs.asDiagonal() * svd.matrixU().transpose()) * neighbors, order};
         }
     }
 
     // Either matrix was invertible, or regularization made it invertible
-    return inverse * neighbors;
+    return {inverse * neighbors, order};
 }
 
 void HalfEdge::simplify(
@@ -1194,7 +1214,7 @@ void HalfEdge::simplify(
         delete topFace;
         delete bottomFace;
 
-        cr.affineMatrix = computeCollapseAffineMatrix(ci.collapsedVertex);
+        std::tie(cr.affineMatrix, cr.neighborOrder) = computeCollapseAffineMatrix(ci.collapsedVertex);
 
         validate(mesh);
 

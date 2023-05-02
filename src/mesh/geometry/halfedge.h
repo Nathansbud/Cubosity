@@ -159,6 +159,9 @@ namespace HalfEdge {
         Vertex removedOrigin;
         Vertex shiftedOrigin;
 
+        // Neighbors need to be in a consistent order for affineMatrix to play nice with other
+        // matrices, so save order when creating
+        std::vector<int> neighborOrder;
         Eigen::MatrixXf affineMatrix;
 
         int collapsedEID;
@@ -196,8 +199,10 @@ namespace HalfEdge {
         }
     };
 
-    Eigen::MatrixXf computeNeighborMatrix(Vertex*);
-    Eigen::MatrixXf computeCollapseAffineMatrix(Vertex*);
+    // Returns back a pair of the relevant matrix, and the neighbor order used to compute it
+    std::pair<Eigen::MatrixXf, std::vector<int>> computeNeighborMatrix(Vertex*);
+    std::pair<Eigen::MatrixXf, std::vector<int>> computeCollapseAffineMatrix(Vertex*);
+    Eigen::MatrixXf computeNeighborMatrix(Vertex*, std::vector<int>& order);
 
     void simplify(
         std::unordered_set<HalfEdge*>& originalMesh,
