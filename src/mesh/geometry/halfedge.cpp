@@ -16,12 +16,12 @@ void HalfEdge::fromVerts(
     const std::vector<Eigen::Vector3f>& vertices,
     const std::vector<Eigen::Vector3i>& faces,
     std::unordered_set<HalfEdge*>& halfEdges,
-    GeomID& geomIDs
+    GeomMap& geometry
 ) {
     std::vector<Vertex*> verts(vertices.size(), NULL);
     std::map<std::tuple<Vertex*, Vertex*>, Edge*> edges;
 
-    int FID = 0, VID = 0, EID = 0;
+    int FID = 0, EID = 0;
 
     for(; FID < faces.size(); FID++) {
         const Vector3i& face = faces[FID];
@@ -50,12 +50,13 @@ void HalfEdge::fromVerts(
             } else {
                 // create new vertex
                 curVertex = new Vertex();
-                curVertex->vid = VID++;
+                curVertex->vid = curVertexIndex;
                 curVertex->point = vertices[curVertexIndex];
                 curVertex->halfEdge = faceHalfEdges[i];
 
                 // save the vertex
                 verts[curVertexIndex] = curVertex;
+                geometry.vertices.insert({ curVertexIndex, curVertex });
             }
 
             faceVertices[i] = curVertex;
@@ -78,10 +79,11 @@ void HalfEdge::fromVerts(
                 curEdge->halfEdge->twin = faceHalfEdges[i];
             } else {
                 curEdge = new Edge();
-                curEdge->eid = EID++;
+                curEdge->eid = EID;
                 curEdge->halfEdge = faceHalfEdges[i];
-
                 edges.insert({ { curVertex, nextVertex }, curEdge });
+                geometry.edges.insert({ EID, curEdge });
+                EID++;
             }
 
             faceHalfEdges[i]->edge = curEdge;
@@ -95,12 +97,18 @@ void HalfEdge::fromVerts(
         for (int i = 0; i < 3; i++) {
             faceHalfEdges[i]->face = curFace;
         }
+
+        geometry.faces.insert({ FID, curFace });
     }
 
-    // Assign our max ID
-    geomIDs.EID_MAX = EID;
-    geomIDs.FID_MAX = FID;
-    geomIDs.VID_MAX = VID;
+    // Assign our max IDs
+    geometry.bounds = {
+        .VID_MAX = static_cast<int>(vertices.size()),
+        .EID_MAX = EID,
+        .FID_MAX = FID,
+        // Not sure we need to care about halfedge IDs for anything?
+        .HID_MAX = -1
+    };
 }
 
 void HalfEdge::toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces) {
@@ -627,7 +635,13 @@ bool HalfEdge::collapse(HalfEdge* halfEdge, const Eigen::Vector3f& collapsePoint
     return true;
 }
 
-void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record, ExpandInfo& ei, std::unordered_set<HalfEdge*>& halfEdges) {
+void HalfEdge::expand(
+    Vertex* collapsed,
+    CollapseRecord& record,
+    ExpandInfo& ei,
+    std::unordered_set<HalfEdge*>& halfEdges,
+    GeomMap& geometry
+) {
     // Assume that vertex collapse was obtained by index, record.shiftedOrigin.vid;
     Vertex& shifted = record.shiftedOrigin;
     Vertex& removed = record.removedOrigin;
@@ -657,10 +671,17 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record, ExpandInfo& ei,
     Face* bottomFace = new Face();
 
     halfEdges.insert({ collapsedTop, collapsedBottom, removedInner, removedNext, shiftedInner, shiftedNext });
+
+    // Possible we don't need this at all but I'm keeping it for now :)
     ei.createdVert = removedVertex;
     ei.createdEdges = { collapsedEdge, removedEdge, shiftedEdge };
     ei.createdFaces = { topFace, bottomFace };
     ei.createdHalfedges = { collapsedTop, collapsedBottom, removedInner, removedNext, shiftedInner, shiftedNext };
+
+    // Update geometry
+    geometry.vertices[record.removedOrigin.vid] = removedVertex;
+    for(Edge* e : ei.createdEdges) geometry.edges[e->eid] = e;
+    for(Face* f : ei.createdFaces) geometry.faces[f->fid] = f;
 
     // Remake our collapsed edge!
     collapsedEdge->halfEdge = collapsedTop;
@@ -721,7 +742,7 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record, ExpandInfo& ei,
     bottomFace->halfEdge = collapsedBottom;
     bottomFace->fid = record.bottomFID;
 
-    removedVertex->point = removed.point;
+    removedVertex->point = collapsed->point + removed.point;
     removedVertex->halfEdge = removedInner;
     removedVertex->vid = removed.vid;
 
@@ -770,7 +791,7 @@ void HalfEdge::expand(Vertex* collapsed, CollapseRecord& record, ExpandInfo& ei,
     } while(col != collapsed->halfEdge);
 
     // Return our collapsed vertex to its original position
-    collapsed->point = shifted.point;
+    collapsed->point = collapsed->point + shifted.point;
     collapsed->halfEdge = collapsedTop;
     // Unmodified: collapsed->vid
 }
@@ -996,10 +1017,61 @@ void HalfEdge::updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::
     }
 }
 
+MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v) {
+    std::vector<Vertex*> neighs;
+    neighs.reserve(6);
+
+    HalfEdge* cur = v->halfEdge;
+    do {
+        neighs.push_back(cur->twin->vertex);
+        cur = cur->twin->next;
+    } while(cur != v->halfEdge);
+
+    MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
+    for(int i = 0; i < neighs.size(); i++) {
+        neighbors.col(i) = neighs[i]->point - v->point;
+    }
+
+    return neighbors;
+}
+
+MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
+    MatrixXf neighbors = computeNeighborMatrix(v);
+
+    Matrix3f inverse;
+    bool invertible;
+
+    Matrix3f computed = (neighbors * neighbors.transpose());
+    computed.computeInverseWithCheck(inverse, invertible);
+    if(!invertible) {
+        // If non-invertible, attempt to compute use Tikhonov regularization (per paper)
+        Matrix3f gamma = 0.1f * Matrix3f::Identity();
+        (computed + gamma * gamma.transpose()).computeInverseWithCheck(inverse, invertible);
+
+        // If failed to regularize as well, just use pseudoinverse (which is expensive)
+        if(!invertible) {
+            double tolerance = 1e-12;
+            auto svd = computed.jacobiSvd(ComputeThinU | ComputeThinV);
+            MatrixXf svs = svd.singularValues();
+            for(int i = 0; i < svs.size(); i++) {
+                if(svs(i) < tolerance) svs(i) = 0;
+                else svs(i) = 1 / svs(i);
+            }
+
+            // Pseudoinverse if all else fails :(
+            return (svd.matrixV() * svs.asDiagonal() * svd.matrixU().transpose()) * neighbors;
+        }
+    }
+
+    // Either matrix was invertible, or regularization made it invertible
+    return inverse * neighbors;
+}
+
 void HalfEdge::simplify(
     std::unordered_set<HalfEdge*>& mesh,
     const int numTriangles,
-    CollapseSequence& colSeq
+    CollapseSequence& colSeq,
+    GeomMap& geometry
 ) {
     std::unordered_map<Vertex*, Eigen::Matrix4f> vertToQuadric;
     std::unordered_set<Face*> faces;
@@ -1061,10 +1133,19 @@ void HalfEdge::simplify(
 
         // Populate our shifted and removed vertices
         Vertex* shiftedVert = ci.deletedVertices[0];
-        cr.shiftedOrigin = { .point = shiftedVert->point, .vid = shiftedVert->vid };
+        cr.shiftedOrigin = {
+            .point = shiftedVert->point - ci.collapsedVertex->point,
+            .vid = shiftedVert->vid
+        };
 
         Vertex* deletedVert = ci.deletedVertices[1];
-        cr.removedOrigin = { .point = deletedVert->point, .vid = deletedVert->vid };
+        cr.removedOrigin = {
+            .point = deletedVert->point - ci.collapsedVertex->point,
+            .vid = deletedVert->vid
+        };
+
+        geometry.vertices[shiftedVert->vid] = ci.collapsedVertex;
+        geometry.vertices[deletedVert->vid] = nullptr;
 
         delete shiftedVert;
         delete deletedVert;
@@ -1080,6 +1161,8 @@ void HalfEdge::simplify(
         cr.removedEID = removedEdge->eid;
         cr.shiftedEID = shiftedEdge->eid;
 
+        for(const Edge* e : ci.deletedEdges) geometry.edges[e->eid] = nullptr;
+
         delete collapsedEdge;
         delete shiftedEdge;
         delete removedEdge;
@@ -1090,8 +1173,12 @@ void HalfEdge::simplify(
         cr.topFID = topFace->fid;
         cr.bottomFID = bottomFace->fid;
 
+        for(const Face* f : ci.deletedFaces) geometry.faces[f->fid] = nullptr;
+
         delete topFace;
         delete bottomFace;
+
+        cr.affineMatrix = computeCollapseAffineMatrix(ci.collapsedVertex);
 
         validate(mesh);
 

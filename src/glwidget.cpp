@@ -111,6 +111,16 @@ void GLWidget::initializeGL()
 
 void GLWidget::paintGL()
 {
+    if (this->cubeIter == 100) {
+        this->cubing = false;
+        this->cubeIter = 0;
+    }
+
+    if (this->cubing) {
+        this->m_arap.cubify();
+        this->cubeIter++;
+    }
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (m_arap.isTextured()) {
@@ -307,6 +317,11 @@ void GLWidget::subdivide() {
 
 void GLWidget::denoise() {
     m_arap.denoise(settings);
+}
+
+void GLWidget::cubify() {
+    this->cubing = true;
+    this->cubeIter = 0;
 }
 
 // ================== Physics Tick

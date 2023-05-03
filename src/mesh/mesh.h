@@ -8,7 +8,7 @@
 
 class Mesh
 {
-public:
+public:    
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
     void initFromVectors(const std::vector<Eigen::Vector3f> &vertices,
@@ -21,7 +21,8 @@ public:
     void subdivide();
     void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);
     void simplify(const int n);
-    void expand();
+
+    bool expand();
 
     const std::vector<Eigen::Vector3f>& getVertices() {
         return _vertices;
@@ -36,11 +37,6 @@ private:
     std::vector<Eigen::Vector3i> _faces;
     std::unordered_set<HalfEdge::HalfEdge*> _halfEdges;
 
-    std::unordered_map<int, HalfEdge::Edge*> _edgeMap;
-    std::unordered_map<int, HalfEdge::Face*> _faceMap;
-    std::unordered_map<int, HalfEdge::Vertex*> _vertexMap;
-
+    HalfEdge::GeomMap _geometry;
     HalfEdge::CollapseState _collapseState;
-
-    HalfEdge::GeomID _geomID;
 };
