@@ -13,8 +13,6 @@ public:
 
     void initFromVectors(const std::vector<Eigen::Vector3f> &vertices,
                          const std::vector<Eigen::Vector3i> &faces);
-    // why no work
-    void loadFromFile(const std::string &filePath);
     void saveToFile(const std::string &filePath);
     void saveProgressiveFile(const std::string &filepath, const HalfEdge::CollapseSequence& sequence);
 
