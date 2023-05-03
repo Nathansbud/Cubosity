@@ -21,22 +21,31 @@ public:
     void subdivide();
     void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);
     void simplify(const int n);
+<<<<<<< HEAD
+
+    bool expand();
+=======
+>>>>>>> progressive-meshing
 
     bool expand();
 
-    const std::vector<Eigen::Vector3f>& getVertices() {
-        return _vertices;
-    }
+    const std::vector<Eigen::Vector3f>& getVertices() { return _vertices; }
+    const std::vector<Eigen::Vector3i>& getFaces() { return _faces; }
 
-    const std::vector<Eigen::Vector3i>& getFaces() {
-        return _faces;
-    }
+    int getOrientationGroup(int vIndex) { return _indices.vertices[vIndex].orientationGroup; }
+    void updatePositions(const std::vector<Eigen::Vector3f> &vertices);
 
 private:
     std::vector<Eigen::Vector3f> _vertices;
     std::vector<Eigen::Vector3i> _faces;
     std::unordered_set<HalfEdge::HalfEdge*> _halfEdges;
 
+<<<<<<< HEAD
     HalfEdge::GeomMap _geometry;
+=======
+    // Mapping from OpenGL ordering to geometry element ID
+    HalfEdge::GeomMap _geometry;
+    HalfEdge::IndexMap _indices;
+>>>>>>> progressive-meshing
     HalfEdge::CollapseState _collapseState;
 };

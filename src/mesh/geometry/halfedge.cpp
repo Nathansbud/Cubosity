@@ -111,43 +111,53 @@ void HalfEdge::fromVerts(
     };
 }
 
-void HalfEdge::toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces) {
+void HalfEdge::toVerts(
+    const std::unordered_set<HalfEdge*>& halfEdges,
+    std::vector<Eigen::Vector3f>& vertices,
+    std::vector<Eigen::Vector3i>& faces,
+    IndexMap& indexTo
+) {
     vertices.clear();
     faces.clear();
+    indexTo.faces.clear();
+    indexTo.vertices.clear();
 
     std::unordered_set<Face*> foundFaces;
     std::unordered_map<Vertex*, int> vertexToIndex;
 
-    int curIndex = 0;
+    int vIndex = 0;
+    int fIndex = 0;
     for (HalfEdge* halfEdge : halfEdges) {
-        if (foundFaces.contains(halfEdge->face)) {
-            continue;
-        }
+        if (foundFaces.contains(halfEdge->face)) continue;
         foundFaces.insert(halfEdge->face);
+        indexTo.faces.insert({fIndex++, halfEdge->face->fid});
 
         int vert1, vert2, vert3;
         if (vertexToIndex.contains(halfEdge->vertex)) {
             vert1 = vertexToIndex[halfEdge->vertex];
         } else {
-            vert1 = curIndex++;
-            vertexToIndex[halfEdge->vertex] = vert1;
+            vert1 = vIndex;
+            vertexToIndex[halfEdge->vertex] = vIndex;
             vertices.push_back(halfEdge->vertex->point);
+            indexTo.vertices.insert({vIndex++, {halfEdge->vertex->vid, 0}});
         }
 
         if (vertexToIndex.contains(halfEdge->next->vertex)) {
             vert2 = vertexToIndex[halfEdge->next->vertex];
         } else {
-            vert2 = curIndex++;
-            vertexToIndex[halfEdge->next->vertex] = vert2;
+            vert2 = vIndex;
+            vertexToIndex[halfEdge->next->vertex] = vIndex;
             vertices.push_back(halfEdge->next->vertex->point);
+            indexTo.vertices.insert({vIndex++, {halfEdge->next->vertex->vid, 0}});
         }
 
         if (vertexToIndex.contains(halfEdge->next->next->vertex)) {
             vert3 = vertexToIndex[halfEdge->next->next->vertex];
         } else {
-            vert3 = curIndex++;
-            vertexToIndex[halfEdge->next->next->vertex] = vert3;
+            vert3 = vIndex;
+            vertexToIndex[halfEdge->next->next->vertex] = vIndex;
             vertices.push_back(halfEdge->next->next->vertex->point);
+            indexTo.vertices.insert({vIndex++, {halfEdge->next->next->vertex->vid, 0}});
         }
 
         faces.push_back(Eigen::Vector3i{vert1, vert2, vert3});
@@ -646,6 +656,9 @@ void HalfEdge::expand(
     Vertex& shifted = record.shiftedOrigin;
     Vertex& removed = record.removedOrigin;
 
+    // Affine transform matrix
+    Matrix3f transform = computeNeighborMatrix(collapsed, record.neighborOrder) * record.affineMatrix.transpose();
+
     if(collapsed->vid != shifted.vid) {
         std::cerr << "Cannot expand vertex " << collapsed->vid << " using collapse record for " << shifted.vid << std::endl;
         return;
@@ -742,7 +755,7 @@ void HalfEdge::expand(
     bottomFace->halfEdge = collapsedBottom;
     bottomFace->fid = record.bottomFID;
 
-    removedVertex->point = collapsed->point + removed.point;
+    removedVertex->point = collapsed->point + transform * removed.point;
     removedVertex->halfEdge = removedInner;
     removedVertex->vid = removed.vid;
 
@@ -791,7 +804,7 @@ void HalfEdge::expand(
     } while(col != collapsed->halfEdge);
 
     // Return our collapsed vertex to its original position
-    collapsed->point = collapsed->point + shifted.point;
+    collapsed->point = collapsed->point + transform * shifted.point;
     collapsed->halfEdge = collapsedTop;
     // Unmodified: collapsed->vid
 }
@@ -1017,7 +1030,28 @@ void HalfEdge::updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::
     }
 }
 
+<<<<<<< HEAD
 MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v) {
+=======
+MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v, std::vector<int>& order) {
+    std::map<int, Vertex*> neighs;
+
+    HalfEdge* cur = v->halfEdge;
+    do {
+        neighs.insert({cur->twin->vertex->vid, cur->twin->vertex});
+        cur = cur->twin->next;
+    } while(cur != v->halfEdge);
+
+    MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
+    for(int i = 0; i < order.size(); i++) {
+        neighbors.col(i) = neighs[order[i]]->point - v->point;
+    }
+
+    return neighbors;
+}
+
+std::pair<MatrixXf, std::vector<int>> HalfEdge::computeNeighborMatrix(Vertex* v) {
+>>>>>>> progressive-meshing
     std::vector<Vertex*> neighs;
     neighs.reserve(6);
 
@@ -1027,6 +1061,7 @@ MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v) {
         cur = cur->twin->next;
     } while(cur != v->halfEdge);
 
+<<<<<<< HEAD
     MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
     for(int i = 0; i < neighs.size(); i++) {
         neighbors.col(i) = neighs[i]->point - v->point;
@@ -1037,6 +1072,21 @@ MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v) {
 
 MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
     MatrixXf neighbors = computeNeighborMatrix(v);
+=======
+    std::vector<int> order(neighs.size());
+
+    MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
+    for(int i = 0; i < neighs.size(); i++) {
+        neighbors.col(i) = neighs[i]->point - v->point;
+        order[i] = neighs[i]->vid;
+    }
+
+    return {neighbors, order};
+}
+
+std::pair<MatrixXf, std::vector<int>> HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
+    auto [neighbors, order] = computeNeighborMatrix(v);
+>>>>>>> progressive-meshing
 
     Matrix3f inverse;
     bool invertible;
@@ -1059,12 +1109,20 @@ MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
             }
 
             // Pseudoinverse if all else fails :(
+<<<<<<< HEAD
             return (svd.matrixV() * svs.asDiagonal() * svd.matrixU().transpose()) * neighbors;
+=======
+            return {(svd.matrixV() * svs.asDiagonal() * svd.matrixU().transpose()) * neighbors, order};
+>>>>>>> progressive-meshing
         }
     }
 
     // Either matrix was invertible, or regularization made it invertible
+<<<<<<< HEAD
     return inverse * neighbors;
+=======
+    return {inverse * neighbors, order};
+>>>>>>> progressive-meshing
 }
 
 void HalfEdge::simplify(
@@ -1178,7 +1236,11 @@ void HalfEdge::simplify(
         delete topFace;
         delete bottomFace;
 
+<<<<<<< HEAD
         cr.affineMatrix = computeCollapseAffineMatrix(ci.collapsedVertex);
+=======
+        std::tie(cr.affineMatrix, cr.neighborOrder) = computeCollapseAffineMatrix(ci.collapsedVertex);
+>>>>>>> progressive-meshing
 
         validate(mesh);
 

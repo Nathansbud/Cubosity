@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 
 #include "interface/OrientationGroup.h"
+#include "interface/MatrixInput.h"
+
 #include <QMainWindow>
 #include <QSlider>
 #include <QSpinBox>
@@ -41,6 +43,7 @@ MainWindow::MainWindow()
     addSpinBox(simpLayout, "", 4, 10000000, 1, glWidget->settings.simplifyTarget, &MainWindow::onSimplifyTargetChange);
     addPushButton(simpLayout, "Simplify", &MainWindow::onSimplifyButtonClick);
     addPushButton(simpLayout, "Expand", &MainWindow::onExpandButtonClick);
+    addPushButton(simpLayout, "Expand All", &MainWindow::onExpandAllButtonClick);
 
     simpBox->setLayout(simpLayout);
 
@@ -65,9 +68,12 @@ MainWindow::MainWindow()
     orientLayout = new QVBoxLayout();
     orientBox->setLayout(orientLayout);
 
-    addPushButton(orientLayout, "Add Group", &MainWindow::addOrientationGroup);
+    addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
+    OrientationGroup* baseOrientation = new OrientationGroup(QColor::fromRgb(255, 0, 0));
 
+    addOrientationGroup(baseOrientation);
     rotLayout->addWidget(orientBox);
+
     this->showFullScreen();
 }
 
@@ -79,7 +85,7 @@ void MainWindow::onSimplifyButtonClick() { glWidget->simplify(); }
 void MainWindow::onSimplifyTargetChange(int f) { glWidget->settings.simplifyTarget = f; }
 
 void MainWindow::onExpandButtonClick() { glWidget->expand(); }
-
+void MainWindow::onExpandAllButtonClick() { glWidget->expandAll(); }
 
 void MainWindow::onSubdivideButtonClick() { glWidget->subdivide(); }
 
@@ -90,14 +96,13 @@ void MainWindow::onDenoiseDistanceChange(double d) { glWidget->settings.denoiseD
 void MainWindow::onDenoiseSig1Change(double s) { glWidget->settings.denoiseSigma1 = s; }
 void MainWindow::onDenoiseSig2Change(double s) { glWidget->settings.denoiseSigma2 = s; }
 
-void MainWindow::addOrientationGroup() {
-    OrientationGroup* ng = new OrientationGroup();
-    glWidget->settings.orientationGroups.insert({ng->groupID, {
-        .lambda = ng->lambda->value(),
-        .color = ng->color,
-        .rotation = ng->rotation
-    }});
+void MainWindow::createOrientationGroup() {
+    OrientationGroup* ng = new OrientationGroup(QColor::fromRgb(rand() % 255 + 1, rand() % 255 + 1, rand() % 255 + 1));
+    addOrientationGroup(ng);
+}
 
+void MainWindow::addOrientationGroup(OrientationGroup* ng) {
+    glWidget->settings.orientationGroups.insert({ng->groupID, ng});
     orientLayout->addWidget(ng);
 }
 

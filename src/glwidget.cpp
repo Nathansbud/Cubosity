@@ -123,6 +123,10 @@ void GLWidget::paintGL()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    if (expanding && !m_arap.expand(settings)) {
+        expanding = false;
+    }
+
     if (m_arap.isTextured()) {
         m_textureShader->bind();
         m_textureShader->setUniform("proj", m_camera.getProjection());
@@ -310,6 +314,7 @@ void GLWidget::keyReleaseEvent(QKeyEvent *event)
 
 void GLWidget::simplify() { m_arap.simplify(settings); }
 void GLWidget::expand() { m_arap.expand(settings); }
+void GLWidget::expandAll() { expanding = true; }
 
 void GLWidget::subdivide() {
     m_arap.subdivide();
@@ -319,9 +324,12 @@ void GLWidget::denoise() {
     m_arap.denoise(settings);
 }
 
-void GLWidget::cubify() {
-    this->cubing = true;
-    this->cubeIter = 0;
+void GLWidget::cubify() { 
+    // TODO: Add UI options for animating cubing (and expansion!)
+    // this->cubing = true;
+    // this->cubeIter = 0;
+
+    m_arap.cubify(500, settings); 
 }
 
 // ================== Physics Tick

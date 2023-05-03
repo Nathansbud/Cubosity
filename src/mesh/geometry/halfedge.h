@@ -36,6 +36,19 @@ namespace HalfEdge {
         std::unordered_map<int, Face*> faces;
     };
 
+<<<<<<< HEAD
+=======
+    struct VertexProperties {
+        int VID;
+        int orientationGroup;
+    };
+
+    struct IndexMap {
+        std::map<int, VertexProperties> vertices;
+        std::map<int, int> faces;
+    };
+
+>>>>>>> progressive-meshing
     struct Vertex {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -61,7 +74,16 @@ namespace HalfEdge {
         GeomMap&
     );
 
+<<<<<<< HEAD
     void toVerts(const std::unordered_set<HalfEdge*>& halfEdges, std::vector<Eigen::Vector3f>& vertices, std::vector<Eigen::Vector3i>& faces);
+=======
+    void toVerts(
+        const std::unordered_set<HalfEdge*>& halfEdges,
+        std::vector<Eigen::Vector3f>& vertices,
+        std::vector<Eigen::Vector3i>& faces,
+        IndexMap&
+    );
+>>>>>>> progressive-meshing
 
     void deleteMesh(std::unordered_set<HalfEdge*>& mesh);
     void validate(const std::unordered_set<HalfEdge*>& halfEdges);
@@ -144,6 +166,12 @@ namespace HalfEdge {
         Vertex removedOrigin;
         Vertex shiftedOrigin;
 
+<<<<<<< HEAD
+=======
+        // Neighbors need to be in a consistent order for affineMatrix to play nice with other
+        // matrices, so save order when creating
+        std::vector<int> neighborOrder;
+>>>>>>> progressive-meshing
         Eigen::MatrixXf affineMatrix;
 
         int collapsedEID;
@@ -181,8 +209,15 @@ namespace HalfEdge {
         }
     };
 
+<<<<<<< HEAD
     Eigen::MatrixXf computeNeighborMatrix(Vertex*);
     Eigen::MatrixXf computeCollapseAffineMatrix(Vertex*);
+=======
+    // Returns back a pair of the relevant matrix, and the neighbor order used to compute it
+    std::pair<Eigen::MatrixXf, std::vector<int>> computeNeighborMatrix(Vertex*);
+    std::pair<Eigen::MatrixXf, std::vector<int>> computeCollapseAffineMatrix(Vertex*);
+    Eigen::MatrixXf computeNeighborMatrix(Vertex*, std::vector<int>& order);
+>>>>>>> progressive-meshing
 
     void simplify(
         std::unordered_set<HalfEdge*>& originalMesh,

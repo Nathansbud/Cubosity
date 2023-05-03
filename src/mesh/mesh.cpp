@@ -24,6 +24,15 @@ void Mesh::initFromVectors(const vector<Vector3f> &vertices, const vector<Vector
          << _geometry.bounds.EID_MAX << "E" << endl;
 }
 
+void Mesh::updatePositions(const vector<Vector3f>& vertices) {
+    std::cout << _geometry.vertices.size() << std::endl;
+
+    for (int i = 0; i < vertices.size(); i++) {
+
+        _geometry.vertices[_indices.vertices[i].VID]->point = vertices[i];
+    }
+}
+
 void Mesh::loadFromFile(const string &filePath)
 {
     tinyobj::attrib_t attrib;
@@ -84,7 +93,7 @@ void Mesh::saveToFile(const string &filePath)
     _faces.clear();
 
     HalfEdge::validate(_halfEdges);
-    HalfEdge::toVerts(_halfEdges, _vertices, _faces);
+    HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
 
     // Write vertices
     for (size_t i = 0; i < _vertices.size(); i++)
@@ -138,7 +147,7 @@ void Mesh::subdivide() {
     HalfEdge::deleteMesh(_halfEdges);
 
     _halfEdges = subdividedMesh;
-    HalfEdge::toVerts(_halfEdges, _vertices, _faces);
+    HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
 }
 
 void Mesh::denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S) {
@@ -148,7 +157,7 @@ void Mesh::denoise(const float DIST_THRESH, const float SIGMA_C, const float SIG
     HalfEdge::deleteMesh(_halfEdges);
 
     _halfEdges = denoisedMesh;
-    HalfEdge::toVerts(_halfEdges, _vertices, _faces);
+    HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
 }
 
 void Mesh::simplify(const int n) {
@@ -163,7 +172,7 @@ void Mesh::simplify(const int n) {
         .detailLevel = numCollapses
     };
 
-    HalfEdge::toVerts(_halfEdges, _vertices, _faces);
+    HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
 }
 
 bool Mesh::expand() {
@@ -180,7 +189,7 @@ bool Mesh::expand() {
         HalfEdge::expand(toExpand, cr, ei, _halfEdges, _geometry);
         HalfEdge::validate(_halfEdges);
 
-        HalfEdge::toVerts(_halfEdges, _vertices, _faces);
+        HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
         return true;
     }
 

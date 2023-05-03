@@ -207,7 +207,7 @@ void ARAP::computeRotations(const auto& newVerts, const int mover, const Vector3
     }
 }
 
-void ARAP::computeCubeRotations(const auto& newVerts) {
+void ARAP::computeCubeRotations(const auto& newVerts, Settings& settings) {
     for (int v = 0; v < this->adj.size(); v++) {
         const Vector3f& vertex = this->cached_positions[v];
 
@@ -257,11 +257,12 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
 //        std::cout << "D': " << Dprime << std::endl;
 //        std::cout << "Precomputed: " << Mprecomputed << std::endl;
 
+        Matrix3f R;
         for (int i = 0; i < 100; i++) {
             MatrixXf M = Mprecomputed + (currentCubeData.rho * vertexNormal * (currentCubeData.z - currentCubeData.u).transpose());
 
             auto svd = M.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
-            Matrix3f R = svd.matrixV() * svd.matrixU().transpose();
+            R = svd.matrixV() * svd.matrixU().transpose();
 
             // if our determinant is negative, we found our reflection matrix instead of our rotation one;
             // invert our smallest singular value, per the paper
@@ -276,10 +277,7 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
                 std::cout << "AHH" << std::endl;
             }
 
-            this->rotations[v] = R;
-
-
-            float LAMBDA = 0.2f; // NOTE: pass in as setting eventually
+            float LAMBDA = settings.orientationGroups[this->mesh.getOrientationGroup(v)]->lambda->value();
             float MU = 10.f; // NOTE: pass in as setting eventually;
             float TAU = 2.f; // NOTE: pass in as a setting eventually;
             float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
@@ -334,6 +332,8 @@ void ARAP::computeCubeRotations(const auto& newVerts) {
                 break;
             }
         }
+
+        this->rotations[v] = R;
     }
 }
 
@@ -462,7 +462,6 @@ void ARAP::move(int vertex, Vector3f targetPosition) {
         estimate = this->sal.solve(b);
     }
 
-
     for(int i = 0; i < this->adj.size(); i++) {
         int r = this->remap[i];
 
@@ -474,11 +473,12 @@ void ARAP::move(int vertex, Vector3f targetPosition) {
     m_shape.setVertices(new_vertices);
 }
 
-void ARAP::cubify() {
+void ARAP::cubify(int iters, Settings& settings) {
     const vector<Vector3f>& vertices = mesh.getVertices();
 
     std::vector<Eigen::Vector3f> new_vertices = m_shape.getVertices();
     const std::unordered_set<int>& anchors = m_shape.getAnchors();
+
 
     MatrixXf estimate = MatrixXf::Zero(this->adj.size() - anchors.size(), 3);
     for(int v = 0; v < this->adj.size(); v++) {
@@ -488,8 +488,8 @@ void ARAP::cubify() {
         }
     }
 
-    for (int iterations = 0; iterations < 1; iterations++) {
-        computeCubeRotations(estimate);
+    for (int iterations = 0; iterations < iters; iterations++) {
+        computeCubeRotations(estimate, settings);
 
 //        std::cout << "Rotation:\n" << rotations[0] << std::endl;
 //        break;
@@ -516,9 +516,9 @@ void ARAP::cubify() {
 
         estimate = this->sal.solve(b);
 
-//        if (iterations % 50 == 0) {
-//            std::cout << iterations << std::endl;
-//        }
+        if (iterations % 50 == 0) {
+            std::cout << iterations << std::endl;
+        }
     }
 
     for(int i = 0; i < this->adj.size(); i++) {
@@ -530,6 +530,13 @@ void ARAP::cubify() {
     }
 
     m_shape.setVertices(new_vertices);
+    mesh.updatePositions(new_vertices);
+
+//    computeAdjacency();
+//    this->remap = vector<int>(vertices.size());
+//    this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+//    this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+//    this->cached_positions = vertices;
 }
 
 void ARAP::subdivide() {
@@ -553,6 +560,7 @@ void ARAP::denoise(Settings& s) {
     const vector<Vector3i>& faces = mesh.getFaces();
 
     m_shape.init(vertices, faces);
+
     computeAdjacency();
     this->remap = vector<int>(vertices.size());
     this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
@@ -567,6 +575,7 @@ void ARAP::simplify(Settings& s) {
     const vector<Vector3i>& faces = mesh.getFaces();
 
     m_shape.init(vertices, faces);
+
     computeAdjacency();
     this->remap = vector<int>(vertices.size());
     this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
@@ -574,7 +583,7 @@ void ARAP::simplify(Settings& s) {
     this->cached_positions = vertices;
 }
 
-void ARAP::expand(Settings& s) {
+bool ARAP::expand(Settings& s) {
     if(mesh.expand()) {
         const vector<Vector3f>& vertices = mesh.getVertices();
         const vector<Vector3i>& faces = mesh.getFaces();
@@ -585,5 +594,8 @@ void ARAP::expand(Settings& s) {
         this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
         this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
         this->cached_positions = vertices;
+        return true;
     }
+
+    return false;
 }

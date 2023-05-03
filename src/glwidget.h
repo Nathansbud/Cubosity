@@ -24,6 +24,7 @@ public:
     // extra controls, dispatching to mesh/ARAP
     void simplify();
     void expand();
+    void expandAll();
 
     void subdivide();
     void denoise();
@@ -84,4 +85,5 @@ private:
     bool simplifying = false;
     bool cubing = false;
     int cubeIter = false;
+    bool expanding = false;
 };
