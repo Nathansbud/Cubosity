@@ -21,11 +21,6 @@ public:
     void subdivide();
     void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);
     void simplify(const int n);
-<<<<<<< HEAD
-
-    bool expand();
-=======
->>>>>>> progressive-meshing
 
     bool expand();
 
@@ -40,12 +35,8 @@ private:
     std::vector<Eigen::Vector3i> _faces;
     std::unordered_set<HalfEdge::HalfEdge*> _halfEdges;
 
-<<<<<<< HEAD
-    HalfEdge::GeomMap _geometry;
-=======
     // Mapping from OpenGL ordering to geometry element ID
     HalfEdge::GeomMap _geometry;
     HalfEdge::IndexMap _indices;
->>>>>>> progressive-meshing
     HalfEdge::CollapseState _collapseState;
 };

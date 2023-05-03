@@ -1030,9 +1030,6 @@ void HalfEdge::updateError(Edge* edge, const Eigen::Matrix4f& edgeQuadric, std::
     }
 }
 
-<<<<<<< HEAD
-MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v) {
-=======
 MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v, std::vector<int>& order) {
     std::map<int, Vertex*> neighs;
 
@@ -1051,7 +1048,6 @@ MatrixXf HalfEdge::computeNeighborMatrix(Vertex* v, std::vector<int>& order) {
 }
 
 std::pair<MatrixXf, std::vector<int>> HalfEdge::computeNeighborMatrix(Vertex* v) {
->>>>>>> progressive-meshing
     std::vector<Vertex*> neighs;
     neighs.reserve(6);
 
@@ -1061,18 +1057,6 @@ std::pair<MatrixXf, std::vector<int>> HalfEdge::computeNeighborMatrix(Vertex* v)
         cur = cur->twin->next;
     } while(cur != v->halfEdge);
 
-<<<<<<< HEAD
-    MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
-    for(int i = 0; i < neighs.size(); i++) {
-        neighbors.col(i) = neighs[i]->point - v->point;
-    }
-
-    return neighbors;
-}
-
-MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
-    MatrixXf neighbors = computeNeighborMatrix(v);
-=======
     std::vector<int> order(neighs.size());
 
     MatrixXf neighbors = MatrixXf::Zero(3, neighs.size());
@@ -1086,7 +1070,6 @@ MatrixXf HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
 
 std::pair<MatrixXf, std::vector<int>> HalfEdge::computeCollapseAffineMatrix(Vertex* v) {
     auto [neighbors, order] = computeNeighborMatrix(v);
->>>>>>> progressive-meshing
 
     Matrix3f inverse;
     bool invertible;
@@ -1109,20 +1092,12 @@ std::pair<MatrixXf, std::vector<int>> HalfEdge::computeCollapseAffineMatrix(Vert
             }
 
             // Pseudoinverse if all else fails :(
-<<<<<<< HEAD
-            return (svd.matrixV() * svs.asDiagonal() * svd.matrixU().transpose()) * neighbors;
-=======
             return {(svd.matrixV() * svs.asDiagonal() * svd.matrixU().transpose()) * neighbors, order};
->>>>>>> progressive-meshing
         }
     }
 
     // Either matrix was invertible, or regularization made it invertible
-<<<<<<< HEAD
-    return inverse * neighbors;
-=======
     return {inverse * neighbors, order};
->>>>>>> progressive-meshing
 }
 
 void HalfEdge::simplify(
@@ -1236,11 +1211,7 @@ void HalfEdge::simplify(
         delete topFace;
         delete bottomFace;
 
-<<<<<<< HEAD
-        cr.affineMatrix = computeCollapseAffineMatrix(ci.collapsedVertex);
-=======
         std::tie(cr.affineMatrix, cr.neighborOrder) = computeCollapseAffineMatrix(ci.collapsedVertex);
->>>>>>> progressive-meshing
 
         validate(mesh);
 
