@@ -33,60 +33,75 @@ void Mesh::updatePositions(const vector<Vector3f>& vertices) {
     }
 }
 
-void Mesh::saveToFile(const string &filePath)
-{
+void Mesh::saveProgressiveMesh(const string &outputDir) {
     ofstream outfile;
-    outfile.open(filePath);
+    outfile.open(outputDir + "/mesh.obj");
 
-    _vertices.clear();
-    _faces.clear();
+    ofstream stampfile;
+    stampfile.open(outputDir + "/mesh.stamp");
 
-    HalfEdge::validate(_halfEdges);
-    HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
+    std::map<int, int> outputVertices;
 
-    // Write vertices
-    for (size_t i = 0; i < _vertices.size(); i++)
-    {
-        const Vector3f &v = _vertices[i];
+    int VOUT = 0;
+    for(auto [VID, vertexPtr] : _geometry.vertices) {
+        if(!vertexPtr) continue;
+        Vector3f& v = vertexPtr->point;
         outfile << "v " << v[0] << " " << v[1] << " " << v[2] << endl;
+
+        // Output the vertex ID that our mesh corresponds with!
+        outputVertices.insert({VID, VOUT});
+        stampfile << "v " << VOUT++ << " " << VID << endl;
     }
 
-    // Write faces
-    for (size_t i = 0; i < _faces.size(); i++)
-    {
-        const Vector3i &f = _faces[i];
-        outfile << "f " << (f[0]+1) << " " << (f[1]+1) << " " << (f[2]+1) << endl;
+    int FOUT = 0;
+    for(auto [FID, facePtr] : _geometry.faces) {
+        if(!facePtr) continue;
+
+        HalfEdge::HalfEdge* hedge = facePtr->halfEdge;
+        int V1, V2, V3;
+
+        V1 = hedge->vertex->vid;
+        V2 = hedge->next->vertex->vid;
+        V3 = hedge->next->next->vertex->vid;
+
+        outfile << "f " << (outputVertices[V1] + 1) << " "
+                        << (outputVertices[V2] + 1) << " "
+                        << (outputVertices[V3] + 1) << endl;
+
+        stampfile << "f " << FOUT++ << " " << FID << endl;
     }
 
-    outfile.close();
-}
+    // In order for our collapse records to be loaded, we need to save our edge relationship IDs
+    for(auto [EID, edgePtr] : _geometry.edges) {
+        if(!edgePtr) continue;
 
-void Mesh::saveProgressiveFile(const string &filePath, const HalfEdge::CollapseSequence& cs) {
-    ofstream outfile;
-    outfile.open(filePath);
-    if(outfile.fail()) {
-        std::cout << "Failed to open: " << filePath << std::endl;
-    } else {
-        outfile << "I " << cs.initialFaceResolution << " " << cs.finalFaceResolution << endl;
+        stampfile << "e " << EID << " " << edgePtr->halfEdge->vertex->vid << " "
+                                        << edgePtr->halfEdge->twin->vertex->vid << endl;
+    }
 
-        int cols = 0;
-        for(const HalfEdge::CollapseRecord& cr : cs.collapses) {
-            outfile << "C " << cr.collapsedEID << " ";
-            outfile << "R " << cr.removedEID << " " << cr.removedOrigin.vid << " " << cr.removedOrigin.point[0] << " " << cr.removedOrigin.point[1] << " " << cr.removedOrigin.point[2] << " ";
-            outfile << "S " << cr.shiftedEID << " " << cr.shiftedOrigin.vid << " " << cr.shiftedOrigin.point[0] << " " << cr.shiftedOrigin.point[1] << " " << cr.shiftedOrigin.point[2] << " ";
-            outfile << "F " << cr.topFID << " " << cr.bottomFID << " ";
-            outfile << "W " << cr.wingVIDs.first << " " << cr.wingVIDs.second << " ";
-            outfile << "N ";
-            for(const auto n : cr.movedEdges) {
-                outfile << n << " ";
-            }
-            outfile << endl;
-            cols++;
+    for(const HalfEdge::CollapseRecord& cr : _collapseState.sequence.collapses) {
+        stampfile << "C " << cr.collapsedEID << " "
+                  << "R " << cr.removedEID << " " << cr.removedOrigin.vid << " " << cr.removedOrigin.point[0] << " " << cr.removedOrigin.point[1] << " " << cr.removedOrigin.point[2] << " "
+                  << "S " << cr.shiftedEID << " " << cr.shiftedOrigin.vid << " " << cr.shiftedOrigin.point[0] << " " << cr.shiftedOrigin.point[1] << " " << cr.shiftedOrigin.point[2] << " "
+                  << "F " << cr.topFID << " " << cr.bottomFID << " "
+                  << "W " << cr.wingVIDs.first << " " << cr.wingVIDs.second << " "
+                  << "N ";
+
+        for(const auto n : cr.movedEdges) { stampfile << n << " "; }
+
+        stampfile << "A ";
+        auto& mat = cr.affineMatrix;
+        for(int i = 0; i < mat.cols(); i++) {
+            stampfile << mat(0, i) << " " << mat(1, i) << " " << mat(2, i) << " ";
         }
-        std::cout << "Outputted " << cols << " collapse records..." << std::endl;
+
+        stampfile << "O ";
+        for(int n : cr.neighborOrder) { stampfile << n << " "; }
+        stampfile << endl;
     }
 
     outfile.close();
+    stampfile.close();
 }
 
 void Mesh::subdivide() {
@@ -113,14 +128,13 @@ void Mesh::simplify(const int n) {
     HalfEdge::CollapseSequence cs;
     HalfEdge::simplify(_halfEdges, n, cs, _geometry);
 
-//    saveProgressiveFile("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive/testing.stamp", cs);
-
     int numCollapses = cs.collapses.size();
     this->_collapseState = {
         .sequence = cs,
         .detailLevel = numCollapses
     };
 
+    saveProgressiveMesh("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive");
     HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
 }
 
