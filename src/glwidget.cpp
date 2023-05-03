@@ -117,7 +117,7 @@ void GLWidget::paintGL()
     }
 
     if (this->cubing) {
-        this->m_arap.cubify();
+        this->m_arap.cubify(1, this->settings);
         this->cubeIter++;
     }
 
