@@ -19,8 +19,99 @@ void HalfEdge::fromProgressive(
     GeomMap& geometry,
     ProgressiveRemap& remap
 ) {
+    std::vector<Vertex*> verts(vertices.size(), NULL);
+    std::map<std::tuple<Vertex*, Vertex*>, Edge*> edges;
 
+    int FID = 0;
+    for(; FID < faces.size(); FID++) {
+        const Vector3i& face = faces[FID];
 
+        // populate the face half edges
+        HalfEdge* faceHalfEdges[3];
+        for (int i = 0; i < 3; i++) {
+            faceHalfEdges[i] = new HalfEdge();
+            halfEdges.insert(faceHalfEdges[i]);
+        }
+
+        // initialize the next fields of the half edges.
+        for (int i = 0; i < 3; i++) {
+            faceHalfEdges[i]->next = faceHalfEdges[(i + 1) % 3]; // 0-1, 1-2, 2-1
+        }
+
+        // populate the face vertices
+        Vertex* faceVertices[3];
+        for (int i = 0; i < 3; i++) {
+            int curVertexIndex = face[i];
+            Vertex* curVertex;
+
+            // if vertex already exists
+            if (verts[curVertexIndex] != NULL) {
+                curVertex = verts[curVertexIndex];
+            } else {
+                // create new vertex
+                curVertex = new Vertex();
+                curVertex->vid = remap.vertices[curVertexIndex];
+                curVertex->point = vertices[curVertexIndex];
+                curVertex->halfEdge = faceHalfEdges[i];
+
+                // save the vertex
+                verts[curVertexIndex] = curVertex;
+                geometry.vertices.insert({ curVertex->vid, curVertex });
+            }
+
+            faceVertices[i] = curVertex;
+            faceHalfEdges[i]->vertex = curVertex;
+        }
+
+        // populate the face edges
+        for (int i = 0; i < 3; i++) {
+            Edge* curEdge;
+
+            Vertex* curVertex = faceVertices[i];
+            Vertex* nextVertex = faceVertices[(i + 1) % 3];
+
+            const std::pair<int, int> edgeKey = (curVertex->vid < nextVertex->vid) ?
+                        std::pair<int, int>{curVertex->vid, nextVertex->vid} :
+                        std::pair<int, int>{nextVertex->vid, curVertex->vid};
+
+            // the stored order will always be opposite to the current order
+            if (edges.contains({ nextVertex, curVertex })) {
+                curEdge = edges.at({ nextVertex, curVertex });
+
+                // if the edge already exists, this half edge should be its twin (and vice-versa)
+                faceHalfEdges[i]->twin = curEdge->halfEdge;
+                curEdge->halfEdge->twin = faceHalfEdges[i];
+            } else {
+                curEdge = new Edge();
+                curEdge->eid = remap.vertexEdges[edgeKey];
+                curEdge->halfEdge = faceHalfEdges[i];
+                edges.insert({ { curVertex, nextVertex }, curEdge });
+                geometry.edges.insert({ curEdge->eid, curEdge });
+            }
+
+            faceHalfEdges[i]->edge = curEdge;
+        }
+
+        // populate the faces
+        Face* curFace = new Face();
+        curFace->fid = remap.faces[FID];
+
+        curFace->halfEdge = faceHalfEdges[0];
+        for (int i = 0; i < 3; i++) {
+            faceHalfEdges[i]->face = curFace;
+        }
+
+        geometry.faces.insert({ curFace->fid, curFace });
+    }
+
+    // Assign our max IDs idrk what the dealio is here
+    geometry.bounds = {
+        .VID_MAX = -1,
+        .EID_MAX = -1,
+        .FID_MAX = -1,
+        // Not sure we need to care about halfedge IDs for anything?
+        .HID_MAX = -1
+    };
 }
 
 void HalfEdge::fromVerts(

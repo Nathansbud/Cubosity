@@ -203,9 +203,9 @@ bool Mesh::loadProgressiveMesh(const string &stampPath,
 
                MatrixXf affineMatrix = MatrixXf(3, affineParts.size() / 3);
                for(int i = 0; i < affineParts.size() / 3; i++) {
-                   std::optional<float> colX = toFloat(affineParts[i]);
-                   std::optional<float> colY = toFloat(affineParts[i + 1]);
-                   std::optional<float> colZ = toFloat(affineParts[i + 2]);
+                   std::optional<float> colX = toFloat(affineParts[3 * i]);
+                   std::optional<float> colY = toFloat(affineParts[3 * i + 1]);
+                   std::optional<float> colZ = toFloat(affineParts[3 * i + 2]);
 
                    if(colX == nullopt || colY == nullopt || colZ == nullopt) throw std::invalid_argument("Affine Column");
 
