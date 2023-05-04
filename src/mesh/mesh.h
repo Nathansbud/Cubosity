@@ -15,7 +15,10 @@ public:
                          const std::vector<Eigen::Vector3i> &faces);
 
     void saveProgressiveMesh(const std::string &outputDir);
+    void loadProgressiveMesh(const std::string &inputDir);
+
     void saveProgressiveFile(const std::string &filepath, const HalfEdge::CollapseSequence& sequence);
+
 
     void subdivide();
     void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);

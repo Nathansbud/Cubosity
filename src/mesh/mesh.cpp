@@ -3,11 +3,13 @@
 
 #include <iostream>
 #include <fstream>
+#include <charconv>
+#include <regex>
 
 #include <QFileInfo>
 #include <QString>
 
-#include "util/tiny_obj_loader.h"
+#include "graphics/meshloader.h"
 
 using namespace Eigen;
 using namespace std;
@@ -28,10 +30,285 @@ void Mesh::updatePositions(const vector<Vector3f>& vertices) {
     std::cout << _geometry.vertices.size() << std::endl;
 
     for (int i = 0; i < vertices.size(); i++) {
-
         _geometry.vertices[_indices.vertices[i].VID]->point = vertices[i];
     }
 }
+
+std::optional<int> toInt(std::string& str) {
+    int num;
+    if(std::from_chars(str.data(), str.data() + str.size(), num).ec == std::errc{}) {
+        return num;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<float> toFloat(std::string& str) {
+    // Frustratingly, from_chars for floating points does not seem to have been implemented by GCC?
+    // Maybe it's a C++23 thing, alas
+    try {
+        return std::stof(str);
+    } catch(const std::invalid_argument& ia) {
+        return std::nullopt;
+    }
+}
+
+void Mesh::loadProgressiveMesh(const string &inputDir) {
+    ifstream stampfile;
+    stampfile.open(inputDir + "/mesh.stamp");
+
+    std::string line;
+    std::map<int, int> vertexRemap;
+    std::map<int, int> faceRemap;
+    std::map<std::tuple<int, int>, int> edgeMap;
+    std::vector<HalfEdge::CollapseRecord> records;
+
+    std::string token;
+    std::regex matchUppercase("[A-Z] ");
+
+    try {
+        while(getline(stampfile, line)) {
+            if(line[0] == 'v' || line[0] == 'f') {
+                std::stringstream ss(line);
+                std::vector<std::string> parts; parts.reserve(2);
+                // Progress past the token
+                getline(ss, token, ' ');
+                while(getline(ss, token, ' ')) {
+                    parts.push_back(token);
+                }
+
+                if(parts.size() != 2) throw std::invalid_argument("A");
+
+                std::optional<int> idx = toInt(parts[0]);
+                std::optional<int> gid = toInt(parts[1]);
+
+                if(idx == std::nullopt || gid == std::nullopt) throw std::invalid_argument("B");
+
+                if(line[0] == 'v') {
+                    vertexRemap.insert({idx.value(), gid.value()});
+                } else if(line[0] == 'f') {
+                    faceRemap.insert({idx.value(), gid.value()});
+                }
+
+                std::cout << "parsed token: " << line[0] << ": " << idx.value() << " -> " << gid.value() << std::endl;
+            } else if(line[0] == 'e') {
+                std::stringstream ss(line);
+                std::vector<std::string> parts; parts.reserve(3);
+                // Progress past the token
+                getline(ss, token, ' ');
+                while(getline(ss, token, ' ')) {
+                    parts.push_back(token);
+                }
+
+                if(parts.size() != 3) throw::invalid_argument("C");
+
+                std::optional<int> eid = toInt(parts[0]);
+                std::optional<int> leftVid = toInt(parts[1]);
+                std::optional<int> rightVid = toInt(parts[2]);
+
+                if(eid == std::nullopt || leftVid == std::nullopt || rightVid == std::nullopt) throw std::invalid_argument("D");
+
+                const std::pair<int, int> key = (leftVid < rightVid) ?
+                            std::pair<int, int>{leftVid.value(), rightVid.value()} :
+                            std::pair<int, int>{rightVid.value(), leftVid.value()};
+
+                edgeMap.insert({key, eid.value()});
+                std::cout << "parsed token: e " << eid.value() << ": " << leftVid.value() << " <-> " << rightVid.value() << std::endl;
+            } else if(line[0] == 'C') {
+               std::vector<std::string> sections(
+                   std::sregex_token_iterator(line.begin() + 2, line.end(), matchUppercase, -1),
+                   std::sregex_token_iterator()
+               );
+
+               for(int i = 0; i < sections.size(); i++) {
+                   std::cout << sections[i] << std::endl;
+               }
+
+               if(sections.size() != 8) throw std::invalid_argument("Collapse Parts");
+
+               std::optional<int> collapsedEID = toInt(sections[0]);
+               if(collapsedEID == std::nullopt) throw std::invalid_argument("CollapsedEID");
+
+               std::stringstream rss(sections[1]);
+
+               std::vector<std::string> removedParts; removedParts.reserve(5);
+               while(getline(rss, token, ' ')) {
+                   removedParts.push_back(token);
+               }
+
+               if(removedParts.size() != 5) throw std::invalid_argument("Removed Parts");
+
+               std::optional<int> removedEID = toInt(removedParts[0]);
+               std::optional<int> removedVID = toInt(removedParts[1]);
+               std::optional<float> removedX = toFloat(removedParts[2]);
+               std::optional<float> removedY = toFloat(removedParts[3]);
+               std::optional<float> removedZ = toFloat(removedParts[4]);
+
+               if(removedEID == nullopt || removedVID == nullopt || removedX == nullopt || removedY == nullopt || removedZ == nullopt) {
+                   throw std::invalid_argument("Removed");
+               }
+
+               std::stringstream sss(sections[2]);
+               std::vector<std::string> shiftedParts; shiftedParts.reserve(5);
+               while(getline(sss, token, ' ')) {
+                   shiftedParts.push_back(token);
+               }
+
+               if(shiftedParts.size() != 5) throw std::invalid_argument("Shifted Parts");
+
+               std::optional<int> shiftedEID = toInt(shiftedParts[0]);
+               std::optional<int> shiftedVID = toInt(shiftedParts[1]);
+               std::optional<float> shiftedX = toFloat(shiftedParts[2]);
+               std::optional<float> shiftedY = toFloat(shiftedParts[3]);
+               std::optional<float> shiftedZ = toFloat(shiftedParts[4]);
+
+               if(shiftedEID == nullopt || shiftedVID == nullopt || shiftedX == nullopt || shiftedY == nullopt || shiftedZ == nullopt) {
+                   throw std::invalid_argument("Shifted");
+               }
+
+               std::stringstream fss(sections[3]);
+
+               getline(fss, token, ' ');
+               std::optional<int> topFID = toInt(token);
+
+               getline(fss, token, ' ');
+               std::optional<int> bottomFID = toInt(token);
+               if(topFID == nullopt || bottomFID == nullopt) throw std::invalid_argument("FIDs");
+
+               std::stringstream wss(sections[4]);
+
+               getline(wss, token, ' ');
+               std::optional<int> wingTop = toInt(token);
+
+               getline(wss, token, ' ');
+               std::optional<int> wingBottom = toInt(token);
+
+               if(wingTop == nullopt || wingBottom == nullopt) throw std::invalid_argument("Wings");
+
+               std::stringstream nss(sections[5]);
+               std::vector<std::string> movedParts; movedParts.reserve(6);
+               while(getline(nss, token, ' ')) {
+                   movedParts.push_back(token);
+               }
+
+               std::unordered_set<int> movedEdges;
+               for(int i = 0; i < movedParts.size(); i++) {
+                   std::optional<int> movedEID = toInt(movedParts[i]);
+                   if(movedEID == nullopt) throw std::invalid_argument("Moved");
+
+                   movedEdges.insert(movedEID.value());
+               }
+
+
+               std::stringstream ass(sections[6]);
+               std::vector<std::string> affineParts; affineParts.reserve(18);
+               while(getline(ass, token, ' ')) {
+                   affineParts.push_back(token);
+               }
+
+               if(affineParts.size() % 3 != 0) throw std::invalid_argument("Affine Size");
+
+               MatrixXf affineMatrix = MatrixXf(3, affineParts.size() / 3);
+               for(int i = 0; i < affineParts.size(); i+=3) {
+                   std::optional<float> colX = toFloat(affineParts[i]);
+                   std::optional<float> colY = toFloat(affineParts[i + 1]);
+                   std::optional<float> colZ = toFloat(affineParts[i + 2]);
+
+                   if(colX == nullopt || colY == nullopt || colZ == nullopt) throw std::invalid_argument("Affine Column");
+
+                   affineMatrix.col(i) = Vector3f{colX.value(), colY.value(), colZ.value()};
+               }
+
+               std::stringstream oss(sections[7]);
+               std::vector<std::string> orderParts; orderParts.reserve(6);
+               while(getline(oss, token, ' ')) {
+                   orderParts.push_back(token);
+               }
+
+               if(orderParts.size() != affineMatrix.cols()) throw std::invalid_argument("Affine-Order Mismatch");
+
+               std::vector<int> neighborOrder; neighborOrder.reserve(affineParts.size() / 3);
+               for(int i = 0; i < orderParts.size(); i++) {
+                   std::optional<int> neighVID = toInt(orderParts[i]);
+                   if(neighVID == nullopt) throw std::invalid_argument("Neighbor VID");
+
+                   neighborOrder.push_back(neighVID.value());
+               }
+
+               HalfEdge::CollapseRecord cr;
+
+               std::cout << "oh?" << std::endl;
+
+               cr.collapsedEID = collapsedEID.value();
+               cr.removedEID = removedEID.value();
+               cr.shiftedEID = shiftedEID.value();
+
+               std::cout << "eh?" << std::endl;
+
+               cr.removedOrigin = {
+                   .halfEdge = nullptr,
+                   .point = {removedX.value(), removedY.value(), removedZ.value()},
+                   .vid = removedVID.value()
+               };
+
+               std::cout << "ah?" << std::endl;
+
+               cr.shiftedOrigin = {
+                   .halfEdge = nullptr,
+                   .point = {shiftedX.value(), shiftedY.value(), shiftedZ.value()},
+                   .vid = shiftedVID.value()
+               };
+
+               std::cout << "uh?" << std::endl;
+
+               cr.topFID = topFID.value();
+               cr.bottomFID = bottomFID.value();
+
+               std::cout << "ih?" << std::endl;
+
+               cr.wingVIDs = {wingTop.value(), wingBottom.value()};
+               cr.movedEdges = movedEdges;
+
+               std::cout << "yh?" << std::endl;
+
+               cr.affineMatrix = affineMatrix;
+               cr.neighborOrder = neighborOrder;
+
+               std::cout << "oy vey?" << std::endl;
+
+               records.push_back(cr);
+            } else {
+                std::cerr << "Found invalid progressive mesh element; could not make sense of line: " << line << std::endl;
+                stampfile.close();
+                exit(1);
+            }
+        }
+    } catch(const std::invalid_argument& ia) {
+        std::cerr << "Encountered error: " << ia.what() << std::endl;
+        std::cerr << "Failed to parse file correctly; encountered malformed token: " << token << " @ line " << line << std::endl;
+        stampfile.close();
+        exit(1);
+    }
+
+    stampfile.close();
+
+    std::cout << "vibes" << std::endl;
+
+//    std::vector<Vector3f> verts;
+//    std::vector<Vector3i> faces;
+//    std::vector<Vector2f> uvs;
+//    std::string texture;
+
+//    if(MeshLoader::loadTriMesh(inputDir + "/mesh.obj", verts, faces, uvs, texture)) {
+//        // verts & faces
+
+
+//    } else {
+//        std::cout << "Invalid progressive mesh baby boy!" << std::endl;
+//    }
+
+}
+
 
 void Mesh::saveProgressiveMesh(const string &outputDir) {
     ofstream outfile;

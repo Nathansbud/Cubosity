@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include <unordered_set>
 #include <unordered_map>
+#include "Eigen/StdVector"
 #include <map>
 
 namespace HalfEdge {
@@ -156,6 +157,10 @@ namespace HalfEdge {
     // hence, we need to get the IDs of all removed elements during the collapse, as well as neighbors
     // that we need to return to their rightful place
     struct CollapseRecord {
+        // Seem to need this, otherwise spuriously crashes when parsing from stampfile; possibly because
+        // vector reserving means the alignment gets screwed up? Heck if I know...
+//        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
         Vertex removedOrigin;
         Vertex shiftedOrigin;
 
@@ -173,6 +178,7 @@ namespace HalfEdge {
 
         std::unordered_set<int> movedEdges;
         std::pair<int, int> wingVIDs;
+
     };
 
     struct CollapseSequence {

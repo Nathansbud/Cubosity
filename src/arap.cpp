@@ -30,6 +30,10 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
 
     string obj = parser.positionalArguments().at(0).toStdString();
 
+    this->mesh.loadProgressiveMesh("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive");
+    std::cout << "OH WE PARSIN" << std::endl;
+    exit(0);
+
     // If this doesn't work for you, remember to change your working directory
     if (MeshLoader::loadTriMesh(obj, vertices, triangles, uv, texture)) {
         // our adjacency structure maps each vertex to its adjacent vertices
