@@ -89,8 +89,6 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
                 } else if(line[0] == 'f') {
                     faceRemap.insert({idx.value(), gid.value()});
                 }
-
-                std::cout << "parsed token: " << line[0] << ": " << idx.value() << " -> " << gid.value() << std::endl;
             } else if(line[0] == 'e') {
                 std::stringstream ss(line);
                 std::vector<std::string> parts; parts.reserve(3);
@@ -113,16 +111,11 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
                             std::pair<int, int>{rightVid.value(), leftVid.value()};
 
                 edgeMap.insert({key, eid.value()});
-                std::cout << "parsed token: e " << eid.value() << ": " << leftVid.value() << " <-> " << rightVid.value() << std::endl;
             } else if(line[0] == 'C') {
                std::vector<std::string> sections(
                    std::sregex_token_iterator(line.begin() + 2, line.end(), matchUppercase, -1),
                    std::sregex_token_iterator()
                );
-
-               for(int i = 0; i < sections.size(); i++) {
-                   std::cout << sections[i] << std::endl;
-               }
 
                if(sections.size() != 8) throw std::invalid_argument("Collapse Parts");
 
@@ -209,7 +202,7 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
                if(affineParts.size() % 3 != 0) throw std::invalid_argument("Affine Size");
 
                MatrixXf affineMatrix = MatrixXf(3, affineParts.size() / 3);
-               for(int i = 0; i < affineParts.size(); i+=3) {
+               for(int i = 0; i < affineParts.size() / 3; i++) {
                    std::optional<float> colX = toFloat(affineParts[i]);
                    std::optional<float> colY = toFloat(affineParts[i + 1]);
                    std::optional<float> colZ = toFloat(affineParts[i + 2]);
@@ -237,13 +230,9 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
 
                HalfEdge::CollapseRecord cr;
 
-               std::cout << "oh?" << std::endl;
-
                cr.collapsedEID = collapsedEID.value();
                cr.removedEID = removedEID.value();
                cr.shiftedEID = shiftedEID.value();
-
-               std::cout << "eh?" << std::endl;
 
                cr.removedOrigin = {
                    .halfEdge = nullptr,
@@ -251,30 +240,20 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
                    .vid = removedVID.value()
                };
 
-               std::cout << "ah?" << std::endl;
-
                cr.shiftedOrigin = {
                    .halfEdge = nullptr,
                    .point = {shiftedX.value(), shiftedY.value(), shiftedZ.value()},
                    .vid = shiftedVID.value()
                };
 
-               std::cout << "uh?" << std::endl;
-
                cr.topFID = topFID.value();
                cr.bottomFID = bottomFID.value();
-
-               std::cout << "ih?" << std::endl;
 
                cr.wingVIDs = {wingTop.value(), wingBottom.value()};
                cr.movedEdges = movedEdges;
 
-               std::cout << "yh?" << std::endl;
-
                cr.affineMatrix = affineMatrix;
                cr.neighborOrder = neighborOrder;
-
-               std::cout << "oy vey?" << std::endl;
 
                records.push_back(cr);
             } else {
@@ -292,7 +271,7 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
 
     stampfile.close();
 
-    std::cout << "vibes" << std::endl;
+    std::cout << "Loaded stampfile!" << std::endl;
 
 //    std::vector<Vector3f> verts;
 //    std::vector<Vector3i> faces;
