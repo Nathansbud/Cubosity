@@ -47,6 +47,12 @@ namespace HalfEdge {
         std::map<int, int> faces;
     };
 
+    struct ProgressiveRemap {
+        std::map<int, int> vertices;
+        std::map<int, int> faces;
+        std::map<std::tuple<int, int>, int> vertexEdges;
+    };
+
     struct Vertex {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -70,6 +76,14 @@ namespace HalfEdge {
         const std::vector<Eigen::Vector3i>& faces,
         std::unordered_set<HalfEdge*>& halfEdges,
         GeomMap&
+    );
+
+    void fromProgressive(
+        const std::vector<Eigen::Vector3f>& vertices,
+        const std::vector<Eigen::Vector3i>& faces,
+        std::unordered_set<HalfEdge*>& halfEdges,
+        GeomMap&,
+        ProgressiveRemap&
     );
 
     void toVerts(

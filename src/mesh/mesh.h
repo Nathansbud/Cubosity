@@ -14,10 +14,11 @@ public:
     void initFromVectors(const std::vector<Eigen::Vector3f> &vertices,
                          const std::vector<Eigen::Vector3i> &faces);
 
-    void saveProgressiveMesh(const std::string &outputDir);
-    void loadProgressiveMesh(const std::string &inputDir);
+    bool loadProgressiveMesh(const std::string &stampPath,
+                             const std::vector<Eigen::Vector3f> &vertices,
+                             const std::vector<Eigen::Vector3i> &faces);
 
-    void saveProgressiveFile(const std::string &filepath, const HalfEdge::CollapseSequence& sequence);
+    void saveProgressiveMesh(const std::string &outputDir);
 
 
     void subdivide();

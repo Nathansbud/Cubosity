@@ -6,6 +6,7 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <filesystem>
 
 using namespace std;
 using namespace Eigen;
@@ -30,33 +31,69 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
 
     string obj = parser.positionalArguments().at(0).toStdString();
 
-    this->mesh.loadProgressiveMesh("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive");
-    std::cout << "OH WE PARSIN" << std::endl;
-    exit(0);
-
-    // If this doesn't work for you, remember to change your working directory
-    if (MeshLoader::loadTriMesh(obj, vertices, triangles, uv, texture)) {
-        // our adjacency structure maps each vertex to its adjacent vertices
-        this->adj = vector<std::map<Vindex, std::pair<Vindex, Vindex>>>(vertices.size());
-        this->remap = vector<int>(vertices.size());
-        this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
-        this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
-        this->cubeData = vector<CubeData>(vertices.size(), CubeData{});
-        this->cached_positions = vertices;
-        this->mesh.initFromVectors(vertices, triangles);
-
-        if (texture.size() != 0) {
-            QString objPath = QString(obj.data());
-            QString path = objPath.left(objPath.lastIndexOf('/'));
-            path += "/";
-            path.append(texture.data());
-
-            this->m_shape.init(vertices, triangles, uv, path.toStdString());
-        } else {
-            this->m_shape.init(vertices, triangles);
+    if(filesystem::is_directory(obj)) {
+        auto meshfile = filesystem::path(obj) / "mesh.obj";
+        auto stampfile = filesystem::path(obj) / "mesh.stamp";
+        if(!(filesystem::exists(meshfile) && filesystem::exists(stampfile))) {
+            std::cerr << "Provided directories must contain both simplified mesh (.obj) and associated reconstruction (.stamp) files!" << std::endl;
+            exit(1);
         }
 
-        this->computeAdjacency();
+        if(MeshLoader::loadTriMesh(meshfile, vertices, triangles, uv, texture)) {
+            // our adjacency structure maps each vertex to its adjacent vertices
+            bool loaded = this->mesh.loadProgressiveMesh(stampfile, vertices, triangles);
+            if(!loaded) {
+                std::cerr << "Failed to load progressive mesh :(" << std::endl;
+                exit(1);
+            }
+
+            this->adj = vector<std::map<Vindex, std::pair<Vindex, Vindex>>>(vertices.size());
+            this->remap = vector<int>(vertices.size());
+            this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+            this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+            this->cubeData = vector<CubeData>(vertices.size(), CubeData{});
+            this->cached_positions = vertices;
+
+
+            if (texture.size() != 0) {
+                QString objPath = QString(obj.data());
+                QString path = objPath.left(objPath.lastIndexOf('/'));
+                path += "/";
+                path.append(texture.data());
+
+                this->m_shape.init(vertices, triangles, uv, path.toStdString());
+            } else {
+                this->m_shape.init(vertices, triangles);
+            }
+
+            this->computeAdjacency();
+        }
+
+    } else {
+        // If this doesn't work for you, remember to change your working directory
+        if (MeshLoader::loadTriMesh(obj, vertices, triangles, uv, texture)) {
+            // our adjacency structure maps each vertex to its adjacent vertices
+            this->adj = vector<std::map<Vindex, std::pair<Vindex, Vindex>>>(vertices.size());
+            this->remap = vector<int>(vertices.size());
+            this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
+            this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+            this->cubeData = vector<CubeData>(vertices.size(), CubeData{});
+            this->cached_positions = vertices;
+            this->mesh.initFromVectors(vertices, triangles);
+
+            if (texture.size() != 0) {
+                QString objPath = QString(obj.data());
+                QString path = objPath.left(objPath.lastIndexOf('/'));
+                path += "/";
+                path.append(texture.data());
+
+                this->m_shape.init(vertices, triangles, uv, path.toStdString());
+            } else {
+                this->m_shape.init(vertices, triangles);
+            }
+
+            this->computeAdjacency();
+        }
     }
 
     // Students, please don't touch this code: get min and max for viewport stuff

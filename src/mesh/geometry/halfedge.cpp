@@ -12,6 +12,17 @@ using namespace Eigen;
 
 #define SHOULD_VALIDATE 1
 
+void HalfEdge::fromProgressive(
+    const std::vector<Eigen::Vector3f>& vertices,
+    const std::vector<Eigen::Vector3i>& faces,
+    std::unordered_set<HalfEdge*>& halfEdges,
+    GeomMap& geometry,
+    ProgressiveRemap& remap
+) {
+
+
+}
+
 void HalfEdge::fromVerts(
     const std::vector<Eigen::Vector3f>& vertices,
     const std::vector<Eigen::Vector3i>& faces,

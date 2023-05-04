@@ -9,8 +9,6 @@
 #include <QFileInfo>
 #include <QString>
 
-#include "graphics/meshloader.h"
-
 using namespace Eigen;
 using namespace std;
 
@@ -53,15 +51,17 @@ std::optional<float> toFloat(std::string& str) {
     }
 }
 
-void Mesh::loadProgressiveMesh(const string &inputDir) {
+bool Mesh::loadProgressiveMesh(const string &stampPath,
+                               const std::vector<Eigen::Vector3f> &vertices,
+                               const std::vector<Eigen::Vector3i> &faces) {
     ifstream stampfile;
-    stampfile.open(inputDir + "/mesh.stamp");
+    stampfile.open(stampPath);
 
     std::string line;
-    std::map<int, int> vertexRemap;
-    std::map<int, int> faceRemap;
-    std::map<std::tuple<int, int>, int> edgeMap;
-    std::vector<HalfEdge::CollapseRecord> records;
+
+    HalfEdge::ProgressiveRemap remap;
+
+    HalfEdge::CollapseSequence cs;
 
     std::string token;
     std::regex matchUppercase("[A-Z] ");
@@ -85,9 +85,9 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
                 if(idx == std::nullopt || gid == std::nullopt) throw std::invalid_argument("B");
 
                 if(line[0] == 'v') {
-                    vertexRemap.insert({idx.value(), gid.value()});
+                    remap.vertices.insert({idx.value(), gid.value()});
                 } else if(line[0] == 'f') {
-                    faceRemap.insert({idx.value(), gid.value()});
+                    remap.faces.insert({idx.value(), gid.value()});
                 }
             } else if(line[0] == 'e') {
                 std::stringstream ss(line);
@@ -110,7 +110,7 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
                             std::pair<int, int>{leftVid.value(), rightVid.value()} :
                             std::pair<int, int>{rightVid.value(), leftVid.value()};
 
-                edgeMap.insert({key, eid.value()});
+                remap.vertexEdges.insert({key, eid.value()});
             } else if(line[0] == 'C') {
                std::vector<std::string> sections(
                    std::sregex_token_iterator(line.begin() + 2, line.end(), matchUppercase, -1),
@@ -255,7 +255,9 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
                cr.affineMatrix = affineMatrix;
                cr.neighborOrder = neighborOrder;
 
-               records.push_back(cr);
+               std::cout << "????" << std::endl;
+
+               cs.collapses.push_back(cr);
             } else {
                 std::cerr << "Found invalid progressive mesh element; could not make sense of line: " << line << std::endl;
                 stampfile.close();
@@ -266,26 +268,25 @@ void Mesh::loadProgressiveMesh(const string &inputDir) {
         std::cerr << "Encountered error: " << ia.what() << std::endl;
         std::cerr << "Failed to parse file correctly; encountered malformed token: " << token << " @ line " << line << std::endl;
         stampfile.close();
-        exit(1);
+        return false;
     }
 
     stampfile.close();
 
-    std::cout << "Loaded stampfile!" << std::endl;
+    _vertices = vertices;
+    _faces = faces;
 
-//    std::vector<Vector3f> verts;
-//    std::vector<Vector3i> faces;
-//    std::vector<Vector2f> uvs;
-//    std::string texture;
+    HalfEdge::fromProgressive(_vertices, _faces, _halfEdges, _geometry, remap);
 
-//    if(MeshLoader::loadTriMesh(inputDir + "/mesh.obj", verts, faces, uvs, texture)) {
-//        // verts & faces
+    int numCollapses = cs.collapses.size();
+    this->_collapseState = {
+        .sequence = cs,
+        .detailLevel = numCollapses
+    };
 
+    std::cout << cs.collapses.size() << " @ " << numCollapses << std::endl;
 
-//    } else {
-//        std::cout << "Invalid progressive mesh baby boy!" << std::endl;
-//    }
-
+    return true;
 }
 
 
