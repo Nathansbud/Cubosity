@@ -334,10 +334,10 @@ void GLWidget::denoise() {
 
 void GLWidget::cubify() { 
     // TODO: Add UI options for animating cubing (and expansion!)
-    // this->cubing = true;
-    // this->cubeIter = 0;
+     this->cubing = true;
+     this->cubeIter = 0;
 
-    m_arap.cubify(500, settings); 
+//    m_arap.cubify(500, settings);
 }
 
 // ================== Physics Tick
@@ -355,6 +355,7 @@ void GLWidget::tick()
     moveVec *= m_movementScaling;
     moveVec *= deltaSeconds;
     m_camera.move(moveVec);
+
 
     // Flag this view for repainting (Qt will call paintGL() soon after)
     update();

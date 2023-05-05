@@ -574,8 +574,8 @@ void ARAP::cubify(int iters, Settings& settings) {
         new_vertices[i] = estimate.row(r);
     }
 
-    m_shape.setVertices(new_vertices);
     mesh.updatePositions(new_vertices);
+    m_shape.setVertices(new_vertices);
 
 //    computeAdjacency();
 //    this->remap = vector<int>(vertices.size());
