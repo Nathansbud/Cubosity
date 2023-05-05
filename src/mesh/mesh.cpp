@@ -286,6 +286,8 @@ bool Mesh::loadProgressiveMesh(const string &stampPath,
     std::cout << cs.collapses.size() << " @ " << numCollapses << std::endl;
     loadedProgressive = true;
 
+    update();
+
     return true;
 }
 

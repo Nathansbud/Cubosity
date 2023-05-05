@@ -48,6 +48,10 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax, Settings& 
                 exit(1);
             }
 
+            // I don't trust that these vertices aren't mangled somehow...
+            vertices = this->mesh.getVertices();
+            triangles = this->mesh.getFaces();
+
             this->adj = vector<std::map<Vindex, std::pair<Vindex, Vindex>>>(vertices.size());
             this->remap = vector<int>(vertices.size());
             this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
@@ -458,6 +462,8 @@ void ARAP::computeSystem() {
         }
     }
 
+    std::cout << "System has " << this->L.rows() << " rows" << std::endl;
+
     this->sal.compute(this->L);
     if (this->sal.info() != Eigen::Success) {
         std::cout << "Error: Solver could not compute" << std::endl;
@@ -532,6 +538,8 @@ void ARAP::cubify(int iters, Settings& settings) {
             estimate.row(r) = new_vertices[v];
         }
     }
+
+    std::cout << "Estimate has " << estimate.rows() << " rows" << std::endl;
 
     for (int iterations = 0; iterations < iters; iterations++) {
         computeCubeRotations(estimate, settings);
@@ -631,6 +639,8 @@ void ARAP::simplify(Settings& s) {
 
 bool ARAP::expand(int toLevel, Settings& s) {
     if(mesh.expand(toLevel)) {
+        this->modified = true;
+
         const vector<Vector3f>& vertices = mesh.getVertices();
         const vector<Vector3i>& faces = mesh.getFaces();
 
@@ -640,6 +650,7 @@ bool ARAP::expand(int toLevel, Settings& s) {
         this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
         this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
         this->cached_positions = vertices;
+        this->precompute();
         return true;
     }
 
