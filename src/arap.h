@@ -35,6 +35,7 @@ struct Settings {
     float denoiseSigma1 = 1.f;
     float denoiseSigma2 = 1.f;
 
+    std::string meshPath;
     std::unordered_map<int, OrientationGroup*> orientationGroups;
 };
 
@@ -90,9 +91,9 @@ public:
     void denoise(Settings&);
     void cubify(int iterations, Settings&);
     void simplify(Settings&);
-    bool expand(Settings&);
+    bool expand(int toLevel, Settings&);
 
-    void init(Eigen::Vector3f &min, Eigen::Vector3f &max);
+    void init(Eigen::Vector3f &min, Eigen::Vector3f &max, Settings&);
     void computeAdjacency();
     void move(int vertex, Eigen::Vector3f pos);
 

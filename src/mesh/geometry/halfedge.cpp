@@ -1248,7 +1248,14 @@ void HalfEdge::simplify(
     int curTriangles = faces.size();
     colSeq.initialFaceResolution = curTriangles;
 
+    int roundOff = (curTriangles / 1000) * 1000;
     while (curTriangles > numTriangles) {
+        if(curTriangles < roundOff) {
+            roundOff -= 1000;
+            std::cout << roundOff << " faces" << std::endl;
+        }
+
+
         auto [error, edgeAndPoint] = *errorToEdge.begin();
         auto [edge, collapsePoint] = edgeAndPoint;
 

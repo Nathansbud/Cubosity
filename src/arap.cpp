@@ -13,7 +13,7 @@ using namespace Eigen;
 
 ARAP::ARAP() {}
 
-void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
+void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax, Settings& settings)
 {
     vector<Vector3f> vertices;
     vector<Vector3i> triangles;
@@ -30,6 +30,7 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
     }
 
     string obj = parser.positionalArguments().at(0).toStdString();
+    settings.meshPath = obj;
 
     if(filesystem::is_directory(obj)) {
         auto meshfile = filesystem::path(obj) / "mesh.obj";
@@ -95,6 +96,9 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax)
             this->computeAdjacency();
         }
     }
+
+//    std::cout << "this gonna take a minuteeeee..." << std::endl;
+//    this->mesh.simplify(1000);
 
     // Students, please don't touch this code: get min and max for viewport stuff
     MatrixX3f all_vertices = MatrixX3f(vertices.size(), 3);
@@ -610,7 +614,8 @@ void ARAP::denoise(Settings& s) {
 }
 
 void ARAP::simplify(Settings& s) {
-    mesh.simplify(s.simplifyTarget);
+    std::string dirPath = s.meshPath.substr(0, s.meshPath.rfind(".")) + "/";
+    mesh.simplify(s.simplifyTarget, dirPath);
 
     const vector<Vector3f>& vertices = mesh.getVertices();
     const vector<Vector3i>& faces = mesh.getFaces();
@@ -624,8 +629,8 @@ void ARAP::simplify(Settings& s) {
     this->cached_positions = vertices;
 }
 
-bool ARAP::expand(Settings& s) {
-    if(mesh.expand()) {
+bool ARAP::expand(int toLevel, Settings& s) {
+    if(mesh.expand(toLevel)) {
         const vector<Vector3f>& vertices = mesh.getVertices();
         const vector<Vector3i>& faces = mesh.getFaces();
 

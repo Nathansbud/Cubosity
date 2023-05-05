@@ -5,6 +5,7 @@
 #include <fstream>
 #include <charconv>
 #include <regex>
+#include <filesystem>
 
 #include <QFileInfo>
 #include <QString>
@@ -255,8 +256,6 @@ bool Mesh::loadProgressiveMesh(const string &stampPath,
                cr.affineMatrix = affineMatrix;
                cr.neighborOrder = neighborOrder;
 
-               std::cout << "????" << std::endl;
-
                cs.collapses.push_back(cr);
             } else {
                 std::cerr << "Found invalid progressive mesh element; could not make sense of line: " << line << std::endl;
@@ -285,17 +284,21 @@ bool Mesh::loadProgressiveMesh(const string &stampPath,
     };
 
     std::cout << cs.collapses.size() << " @ " << numCollapses << std::endl;
+    loadedProgressive = true;
 
     return true;
 }
 
 
 void Mesh::saveProgressiveMesh(const string &outputDir) {
+    filesystem::path outDir = filesystem::path(outputDir);
+    if(!filesystem::is_directory(outDir)) filesystem::create_directory(outDir);
+
     ofstream outfile;
-    outfile.open(outputDir + "/mesh.obj");
+    outfile.open(outDir / "mesh.obj");
 
     ofstream stampfile;
-    stampfile.open(outputDir + "/mesh.stamp");
+    stampfile.open(outDir / "mesh.stamp");
 
     std::map<int, int> outputVertices;
 
@@ -359,6 +362,8 @@ void Mesh::saveProgressiveMesh(const string &outputDir) {
 
     outfile.close();
     stampfile.close();
+
+    this->loadedProgressive = true;
 }
 
 void Mesh::subdivide() {
@@ -381,7 +386,7 @@ void Mesh::denoise(const float DIST_THRESH, const float SIGMA_C, const float SIG
     HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
 }
 
-void Mesh::simplify(const int n) {
+void Mesh::simplify(const int n, std::string& outputDir) {
     HalfEdge::CollapseSequence cs;
     HalfEdge::simplify(_halfEdges, n, cs, _geometry);
 
@@ -391,25 +396,28 @@ void Mesh::simplify(const int n) {
         .detailLevel = numCollapses
     };
 
-    saveProgressiveMesh("/Users/zackamiton/Code/BrownCS/Gradphics/projects/Cubosity/progressive");
+    // If we loaded from progressive mesh, don't save to a new progressive mesh
+    if(!loadedProgressive) saveProgressiveMesh(outputDir);
+
     HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
 }
 
-bool Mesh::expand() {
+bool Mesh::expand(int toLevel = -1) {
     if(_collapseState.detailLevel > 0) {
-        HalfEdge::CollapseRecord cr = _collapseState.sequence.collapses[--_collapseState.detailLevel];        
-        HalfEdge::ExpandInfo ei;
-        HalfEdge::Vertex* toExpand = _geometry.vertices[cr.shiftedOrigin.vid];
+        do {
+            HalfEdge::CollapseRecord cr = _collapseState.sequence.collapses[--_collapseState.detailLevel];
+            HalfEdge::ExpandInfo ei;
+            HalfEdge::Vertex* toExpand = _geometry.vertices[cr.shiftedOrigin.vid];
 
-        if(!toExpand) {
-            std::cout << "idk what went wrong here buck stacko" << std::endl;
-            exit(1);
-        }
+            if(!toExpand) {
+                std::cout << "idk what went wrong here buck stacko" << std::endl;
+                exit(1);
+            }
 
-        HalfEdge::expand(toExpand, cr, ei, _halfEdges, _geometry);
-        HalfEdge::validate(_halfEdges);
+            HalfEdge::expand(toExpand, cr, ei, _halfEdges, _geometry);
+        } while(toLevel >= 0 && _collapseState.detailLevel > toLevel);
 
-        HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices);
+        update();
         return true;
     }
 

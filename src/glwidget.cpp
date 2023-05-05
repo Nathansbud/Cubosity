@@ -79,7 +79,7 @@ void GLWidget::initializeGL()
 
     // Initialize ARAP, and get parameters needed to decide the camera position, etc
     Vector3f coeffMin, coeffMax;
-    m_arap.init(coeffMin, coeffMax);
+    m_arap.init(coeffMin, coeffMax, settings);
 
     Vector3f center = (coeffMax + coeffMin) / 2.0f;
     float extentLength  = (coeffMax - coeffMin).norm();
@@ -123,9 +123,9 @@ void GLWidget::paintGL()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (expanding && !m_arap.expand(settings)) {
-        expanding = false;
-    }
+//    if (expanding && !m_arap.expand(settings)) {
+//        expanding = false;
+//    }
 
     if (m_arap.isTextured()) {
         m_textureShader->bind();
@@ -312,9 +312,17 @@ void GLWidget::keyReleaseEvent(QKeyEvent *event)
     }
 }
 
-void GLWidget::simplify() { m_arap.simplify(settings); }
-void GLWidget::expand() { m_arap.expand(settings); }
-void GLWidget::expandAll() { expanding = true; }
+void GLWidget::simplify() {
+    m_arap.simplify(settings);
+}
+void GLWidget::expand() { m_arap.expand(-1, settings); }
+void GLWidget::expandAll() {
+    while(m_arap.expand(0, settings)) {
+        expanding = true;
+    }
+
+    expanding = false;
+}
 
 void GLWidget::subdivide() {
     m_arap.subdivide();

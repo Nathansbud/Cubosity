@@ -23,16 +23,16 @@ public:
 
     void subdivide();
     void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);
-    void simplify(const int n);
-
-    bool expand();
+    void simplify(const int n, std::string& outputDir);
+    bool expand(int toLevel);
 
     const std::vector<Eigen::Vector3f>& getVertices() { return _vertices; }
     const std::vector<Eigen::Vector3i>& getFaces() { return _faces; }
 
+    void update() { HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices); }
+
     int getOrientationGroup(int vIndex) { return _indices.vertices[vIndex].orientationGroup; }
     void updatePositions(const std::vector<Eigen::Vector3f> &vertices);
-
 private:
     std::vector<Eigen::Vector3f> _vertices;
     std::vector<Eigen::Vector3i> _faces;
@@ -42,4 +42,6 @@ private:
     HalfEdge::GeomMap _geometry;
     HalfEdge::IndexMap _indices;
     HalfEdge::CollapseState _collapseState;
+
+    bool loadedProgressive = false;
 };
