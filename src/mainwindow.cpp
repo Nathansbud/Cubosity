@@ -63,13 +63,22 @@ MainWindow::MainWindow()
     vLayout->addWidget(simpBox);
     vLayout->addWidget(denoiseBox);
 
+    QGroupBox* debugBox = new QGroupBox("Debug Controls");
+    QVBoxLayout* debugLayout = new QVBoxLayout();
+
+    addCheckBox(debugLayout, "Animate Cubing? ", glWidget->settings.animateCubing, &MainWindow::onAnimateCubingChecked);
+    addCheckBox(debugLayout, "Animate Expanding? ", glWidget->settings.animateExpand, &MainWindow::onAnimateExpandChecked);
+
+    debugBox->setLayout(debugLayout);
+    vLayout->addWidget(debugBox);
+
     QGroupBox* orientBox = new QGroupBox("Orientations");
 
     orientLayout = new QVBoxLayout();
     orientBox->setLayout(orientLayout);
 
     addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
-    OrientationGroup* baseOrientation = new OrientationGroup(QColor::fromRgb(255, 0, 0));
+    OrientationGroup* baseOrientation = new OrientationGroup(QColor::fromRgb(255, 0, 0));    
 
     addOrientationGroup(baseOrientation);
     rotLayout->addWidget(orientBox);
@@ -105,6 +114,9 @@ void MainWindow::addOrientationGroup(OrientationGroup* ng) {
     glWidget->settings.orientationGroups.insert({ng->groupID, ng});
     orientLayout->addWidget(ng);
 }
+
+void MainWindow::onAnimateCubingChecked(bool b) { glWidget->settings.animateCubing = b; }
+void MainWindow::onAnimateExpandChecked(bool b) { glWidget->settings.animateExpand = b; }
 
 void MainWindow::addHeading(QBoxLayout* layout, QString text) {
     QFont font;

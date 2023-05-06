@@ -35,6 +35,9 @@ struct Settings {
     float denoiseSigma1 = 1.f;
     float denoiseSigma2 = 1.f;
 
+    bool animateCubing = true;
+    bool animateExpand = false;
+
     std::string meshPath;
     std::unordered_map<int, OrientationGroup*> orientationGroups;
 };

@@ -530,7 +530,6 @@ void ARAP::cubify(int iters, Settings& settings) {
     std::vector<Eigen::Vector3f> new_vertices = m_shape.getVertices();
     const std::unordered_set<int>& anchors = m_shape.getAnchors();
 
-
     MatrixXf estimate = MatrixXf::Zero(this->adj.size() - anchors.size(), 3);
     for(int v = 0; v < this->adj.size(); v++) {
         int r = this->remap[v];

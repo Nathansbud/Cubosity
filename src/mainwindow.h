@@ -55,4 +55,8 @@ private:
     void onDenoiseDistanceChange(double);
     void onDenoiseSig1Change(double);
     void onDenoiseSig2Change(double);
+
+    // Debug Options
+    void onAnimateCubingChecked(bool);
+    void onAnimateExpandChecked(bool);
 };

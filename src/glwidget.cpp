@@ -111,21 +111,23 @@ void GLWidget::initializeGL()
 
 void GLWidget::paintGL()
 {
-    if (this->cubeIter == 100) {
-        this->cubing = false;
-        this->cubeIter = 0;
-    }
+    if(settings.animateCubing) {
+        if (this->cubeIter == 100) {
+            this->cubing = false;
+            this->cubeIter = 0;
+        }
 
-    if (this->cubing) {
-        this->m_arap.cubify(1, this->settings);
-        this->cubeIter++;
+        if (this->cubing) {
+            this->m_arap.cubify(1, this->settings);
+            this->cubeIter++;
+        }
     }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-//    if (expanding && !m_arap.expand(settings)) {
-//        expanding = false;
-//    }
+    if (settings.animateExpand && expanding && !m_arap.expand(-1, settings)) {
+        expanding = false;
+    }
 
     if (m_arap.isTextured()) {
         m_textureShader->bind();
@@ -317,11 +319,11 @@ void GLWidget::simplify() {
 }
 void GLWidget::expand() { m_arap.expand(-1, settings); }
 void GLWidget::expandAll() {
-    while(m_arap.expand(0, settings)) {
-        expanding = true;
+    if(settings.animateExpand) expanding = true;
+    else {
+        m_arap.expand(0, settings);
+        expanding = false;
     }
-
-    expanding = false;
 }
 
 void GLWidget::subdivide() {
@@ -333,11 +335,12 @@ void GLWidget::denoise() {
 }
 
 void GLWidget::cubify() { 
-    // TODO: Add UI options for animating cubing (and expansion!)
-     this->cubing = true;
-     this->cubeIter = 0;
-
-//    m_arap.cubify(500, settings);
+    if(settings.animateCubing) {
+        this->cubing = true;
+        this->cubeIter = 0;
+    } else {
+        m_arap.cubify(100, settings);
+    }
 }
 
 // ================== Physics Tick
