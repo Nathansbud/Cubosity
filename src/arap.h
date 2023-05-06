@@ -38,8 +38,10 @@ struct Settings {
     bool animateCubing = true;
     bool animateExpand = false;
 
-    std::string meshPath;
+    int activeGroup = 0;
     std::unordered_map<int, OrientationGroup*> orientationGroups;
+
+    std::string meshPath;
 };
 
 struct CubeData {

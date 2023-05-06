@@ -5,6 +5,9 @@
 #include <QApplication>
 #include <QSurfaceFormat>
 #include <QScreen>
+#include <QPixmap>
+#include <QPainter>
+#include <QCursor>
 
 int main(int argc, char *argv[])
 {

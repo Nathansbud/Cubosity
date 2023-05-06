@@ -3,6 +3,7 @@
 #include "interface/OrientationGroup.h"
 #include "interface/MatrixInput.h"
 
+#include <QApplication>
 #include <QMainWindow>
 #include <QSlider>
 #include <QSpinBox>
@@ -77,6 +78,7 @@ MainWindow::MainWindow()
     orientLayout = new QVBoxLayout();
     orientBox->setLayout(orientLayout);
 
+    exitOrientationButton = addPushButton(orientLayout, "Exit Orientation Selection", &MainWindow::deactivateOrientationGroups);
     addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
 
     OrientationGroup* baseOrientation = new OrientationGroup(QColor::fromRgb(255, 0, 0));
@@ -114,7 +116,22 @@ void MainWindow::createOrientationGroup() {
 void MainWindow::addOrientationGroup(OrientationGroup* ng) {
     glWidget->settings.orientationGroups.insert({ng->groupID, ng});
     connect(ng, &OrientationGroup::colorChanged, this, [&] { glWidget->updateVertexColors(); });
+    connect(ng, &OrientationGroup::makeActive, this, [&](int groupID) {
+        glWidget->settings.activeGroup = groupID;
+        exitOrientationButton->setText(QString("Exit Orientation Selection [Group %1]").arg(groupID));
+        exitOrientationButton->setStyleSheet(
+            QString("border: 2px solid %1;").arg(glWidget->settings.orientationGroups[groupID]->color.name())
+        );
+        QApplication::setOverrideCursor(Qt::CrossCursor);
+    });
     orientLayout->addWidget(ng);
+}
+
+void MainWindow::deactivateOrientationGroups() {
+    glWidget->settings.activeGroup = 0;
+    exitOrientationButton->setText("Exit Orientation Selection");
+    exitOrientationButton->setStyleSheet("");
+    QApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 void MainWindow::onAnimateCubingChecked(bool b) { glWidget->settings.animateCubing = b; }
@@ -168,10 +185,11 @@ void MainWindow::addDoubleSpinBox(QBoxLayout* layout, QString text, double min, 
     connect(box, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, function);
 }
 
-void MainWindow::addPushButton(QBoxLayout* layout, QString text, auto function) {
+QPushButton* MainWindow::addPushButton(QBoxLayout* layout, QString text, auto function) {
     QPushButton* button = new QPushButton(text);
     layout->addWidget(button);
     connect(button, &QPushButton::clicked, this, function);
+    return button;
 }
 
 void MainWindow::addCheckBox(QBoxLayout* layout, QString text, bool val, auto function) {

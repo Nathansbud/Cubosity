@@ -2,6 +2,7 @@
 #include "UIUtil.h"
 #include "MatrixInput.h"
 
+#include <QGroupBox>
 #include <QBoxLayout>
 #include <QColor>
 #include <QPushButton>
@@ -12,11 +13,12 @@
 
 #include <iostream>
 
-class OrientationGroup : public QWidget
+class OrientationGroup : public QGroupBox
 {
     Q_OBJECT
 public:
     QHBoxLayout* contents;
+    QPushButton* addButton;
     QPushButton* colorButton;
     QDoubleSpinBox* lambda;
 
@@ -36,16 +38,20 @@ public:
             QString("background-color: %1; border: none;").arg(color.name())
         );
 
+        this->addButton = new QPushButton("+");
+
         this->lambda = UIUtil::makeDoubleSpinBox(0.01, 10, 0.01, 1.0, 2);
         this->rotation = Matrix3f::Identity();
         this->rotInput = new MatrixInput(rotation, 3, 3);
 
         this->contents = new QHBoxLayout();
+        this->contents->addWidget(addButton);
         this->contents->addWidget(colorButton);
         this->contents->addWidget(lambda);
         this->contents->addWidget(rotInput);
         this->setLayout(contents);
 
+        connect(this->addButton, &QPushButton::clicked, this, [&]() { emit makeActive(this->groupID); });
         connect(this->colorButton, &QPushButton::clicked, this, [&]() {
             QColor ret = QColorDialog::getColor();
             if (ret.isValid()) {
@@ -62,4 +68,5 @@ public:
     }
 signals:
     void colorChanged();
+    void makeActive(int group);
 };
