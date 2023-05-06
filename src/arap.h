@@ -38,7 +38,7 @@ struct Settings {
     bool animateCubing = true;
     bool animateExpand = false;
 
-    int activeGroup = 0;
+    int activeGroup = -1;
     std::unordered_map<int, OrientationGroup*> orientationGroups;
 
     std::string meshPath;
@@ -110,6 +110,7 @@ public:
     void computeSystem();
 
     void updateVertexColors(Settings&);
+    void updateOrientationGroup(int vIndex, int groupID) { this->mesh.setOrientationGroup(vIndex, groupID); }
 
     int getClosestVertex(Eigen::Vector3f start, Eigen::Vector3f ray, float threshold)
     {

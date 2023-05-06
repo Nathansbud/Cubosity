@@ -195,7 +195,11 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
         // Capture
         m_rightCapture = true;
         // Anchor/un-anchor the vertex
-        m_rightClickSelectMode = m_arap.select(m_pointShader, closest_vertex);
+        if(settings.activeGroup != -1) {
+            m_arap.updateOrientationGroup(closest_vertex, settings.activeGroup);
+        } else {
+            m_rightClickSelectMode = m_arap.select(m_pointShader, closest_vertex);
+        }
         break;
     }
     case Qt::MouseButton::LeftButton: {
@@ -232,12 +236,17 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
     if (m_rightCapture) {
         // Get closest vertex to ray
         const int closest_vertex = m_arap.getClosestVertex(m_camera.getPosition(), ray, m_vertexSelectionThreshold);
-
-        // Anchor/un-anchor the vertex
-        if (m_rightClickSelectMode == SelectMode::None) {
-            m_rightClickSelectMode = m_arap.select(m_pointShader, closest_vertex);
-        } else if (closest_vertex != -1) {
-            m_arap.selectWithSpecifiedMode(m_pointShader, closest_vertex, m_rightClickSelectMode);
+        if(settings.activeGroup != -1) {
+            if(closest_vertex != -1) {
+                m_arap.updateOrientationGroup(closest_vertex, settings.activeGroup);
+            }
+        } else {
+            // Anchor/un-anchor the vertex
+            if (m_rightClickSelectMode == SelectMode::None) {
+                m_rightClickSelectMode = m_arap.select(m_pointShader, closest_vertex);
+            } else if (closest_vertex != -1) {
+                m_arap.selectWithSpecifiedMode(m_pointShader, closest_vertex, m_rightClickSelectMode);
+            }
         }
 
         return;

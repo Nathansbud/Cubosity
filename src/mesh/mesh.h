@@ -32,6 +32,8 @@ public:
     void update() { HalfEdge::toVerts(_halfEdges, _vertices, _faces, _indices); }
 
     int getOrientationGroup(int vIndex) { return _indices.vertices[vIndex].orientationGroup; }
+    void setOrientationGroup(int vIndex, int groupID) { _indices.vertices[vIndex].orientationGroup = groupID; }
+
     void updatePositions(const std::vector<Eigen::Vector3f> &vertices);
 private:
     std::vector<Eigen::Vector3f> _vertices;

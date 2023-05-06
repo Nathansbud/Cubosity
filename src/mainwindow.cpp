@@ -128,7 +128,7 @@ void MainWindow::addOrientationGroup(OrientationGroup* ng) {
 }
 
 void MainWindow::deactivateOrientationGroups() {
-    glWidget->settings.activeGroup = 0;
+    glWidget->settings.activeGroup = -1;
     exitOrientationButton->setText("Exit Orientation Selection");
     exitOrientationButton->setStyleSheet("");
     QApplication::setOverrideCursor(Qt::ArrowCursor);
