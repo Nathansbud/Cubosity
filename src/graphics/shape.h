@@ -33,14 +33,17 @@ public:
         const std::vector<Eigen::Vector3f> &vertices,
         const std::vector<Eigen::Vector3i> &triangles,
         const std::vector<Eigen::Vector2f> &uv,
+        const std::vector<Eigen::Vector3f> &vertexColors,
         const std::string texture);
     void init(
         const std::vector<Eigen::Vector3f> &vertices,
         const std::vector<Eigen::Vector3i> &triangles,
-        const std::vector<Eigen::Vector2f> &uv);
+        const std::vector<Eigen::Vector2f> &uv,
+        const std::vector<Eigen::Vector3f> &vertexColors);
     void init(
         const std::vector<Eigen::Vector3f> &vertices,
-        const std::vector<Eigen::Vector3i> &triangles);
+        const std::vector<Eigen::Vector3i> &triangles,
+        const std::vector<Eigen::Vector3f> &vertexColors);
 
     void setVertices(const std::vector<Eigen::Vector3f> &vertices);
 
@@ -81,6 +84,7 @@ private:
     std::vector<Eigen::Vector3i> m_faces;
     std::vector<Eigen::Vector3f> m_vertices;
     std::vector<Eigen::Vector2f> m_uv;
+    std::vector<Eigen::Vector3f> m_vertexColors;
     std::unordered_set<int>      m_anchors;
 
     Eigen::Matrix4f m_modelMatrix;
@@ -93,9 +97,10 @@ private:
     void updateMesh(const std::vector<Eigen::Vector3i> &triangles,
                     const std::vector<Eigen::Vector3f> &vertices,
                     const std::vector<Eigen::Vector2f> &uv_cords,
+                    const std::vector<Eigen::Vector3f> &vertexColors,
                            std::vector<Eigen::Vector3f>& verts,
                            std::vector<Eigen::Vector3f>& normals,
-                           std::vector<Eigen::Vector3f>& colors,
+                           std::vector<Eigen::Vector3f>& cols,
                            std::vector<Eigen::Vector2f>& uv);
 
     void uninit();

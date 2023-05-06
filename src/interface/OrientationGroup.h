@@ -53,7 +53,6 @@ public:
             );
 
             this->color = ret;
-            std::cout << "TODO: Signal to UI that tings need to change" << std::endl;
         });
 
         this->groupID = nextID++;

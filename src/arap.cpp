@@ -18,6 +18,8 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax, Settings& 
     vector<Vector3f> vertices;
     vector<Vector3i> triangles;
     vector<Vector2f> uv;
+    vector<Vector3f> vertexColors;
+
     string texture;
 
     QCommandLineParser parser;
@@ -52,6 +54,11 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax, Settings& 
             vertices = this->mesh.getVertices();
             triangles = this->mesh.getFaces();
 
+            for(int i = 0; i < vertices.size(); i++) {
+                auto& color = settings.orientationGroups[this->mesh.getOrientationGroup(i)]->color;
+                vertexColors.push_back({color.redF(), color.greenF(), color.blueF()});
+            }
+
             this->adj = vector<std::map<Vindex, std::pair<Vindex, Vindex>>>(vertices.size());
             this->remap = vector<int>(vertices.size());
             this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
@@ -59,23 +66,21 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax, Settings& 
             this->cubeData = vector<CubeData>(vertices.size(), CubeData{});
             this->cached_positions = vertices;
 
-
             if (texture.size() != 0) {
                 QString objPath = QString(obj.data());
                 QString path = objPath.left(objPath.lastIndexOf('/'));
                 path += "/";
                 path.append(texture.data());
 
-                this->m_shape.init(vertices, triangles, uv, path.toStdString());
+                this->m_shape.init(vertices, triangles, uv, vertexColors, path.toStdString());
             } else {
-                this->m_shape.init(vertices, triangles);
+                this->m_shape.init(vertices, triangles, vertexColors);
             }
 
             this->computeAdjacency();
         }
 
     } else {
-        // If this doesn't work for you, remember to change your working directory
         if (MeshLoader::loadTriMesh(obj, vertices, triangles, uv, texture)) {
             // our adjacency structure maps each vertex to its adjacent vertices
             this->adj = vector<std::map<Vindex, std::pair<Vindex, Vindex>>>(vertices.size());
@@ -86,15 +91,20 @@ void ARAP::init(Eigen::Vector3f &coeffMin, Eigen::Vector3f &coeffMax, Settings& 
             this->cached_positions = vertices;
             this->mesh.initFromVectors(vertices, triangles);
 
+            for(int i = 0; i < vertices.size(); i++) {
+                auto& color = settings.orientationGroups[this->mesh.getOrientationGroup(i)]->color;
+                vertexColors.push_back({color.redF(), color.greenF(), color.blueF()});
+            }
+
             if (texture.size() != 0) {
                 QString objPath = QString(obj.data());
                 QString path = objPath.left(objPath.lastIndexOf('/'));
                 path += "/";
                 path.append(texture.data());
 
-                this->m_shape.init(vertices, triangles, uv, path.toStdString());
+                this->m_shape.init(vertices, triangles, uv, vertexColors, path.toStdString());
             } else {
-                this->m_shape.init(vertices, triangles);
+                this->m_shape.init(vertices, triangles, vertexColors);
             }
 
             this->computeAdjacency();
@@ -591,13 +601,20 @@ void ARAP::cubify(int iters, Settings& settings) {
 //    this->cached_positions = vertices;
 }
 
-void ARAP::subdivide() {
+void ARAP::subdivide(Settings& settings) {
     mesh.subdivide();
 
     const vector<Vector3f>& vertices = mesh.getVertices();
     const vector<Vector3i>& faces = mesh.getFaces();
 
-    m_shape.init(vertices, faces);
+    vector<Vector3f> vertexColors; vertexColors.reserve(vertices.size());
+
+    for(int i = 0; i < vertices.size(); i++) {
+        auto& color = settings.orientationGroups[this->mesh.getOrientationGroup(i)]->color;
+        vertexColors.push_back({color.redF(), color.greenF(), color.blueF()});
+    }
+
+    m_shape.init(vertices, faces, vertexColors);
     computeAdjacency();
     this->remap = vector<int>(vertices.size());
     this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
@@ -605,13 +622,19 @@ void ARAP::subdivide() {
     this->cached_positions = vertices;
 }
 
-void ARAP::denoise(Settings& s) {
-    mesh.denoise(s.denoiseDistance, s.denoiseSigma1, s.denoiseSigma2);
+void ARAP::denoise(Settings& settings) {
+    mesh.denoise(settings.denoiseDistance, settings.denoiseSigma1, settings.denoiseSigma2);
 
     const vector<Vector3f>& vertices = mesh.getVertices();
     const vector<Vector3i>& faces = mesh.getFaces();
 
-    m_shape.init(vertices, faces);
+    vector<Vector3f> vertexColors; vertexColors.reserve(vertices.size());
+    for(int i = 0; i < vertices.size(); i++) {
+        auto& color = settings.orientationGroups[this->mesh.getOrientationGroup(i)]->color;
+        vertexColors.push_back({color.redF(), color.greenF(), color.blueF()});
+    }
+
+    m_shape.init(vertices, faces, vertexColors);
 
     computeAdjacency();
     this->remap = vector<int>(vertices.size());
@@ -620,14 +643,20 @@ void ARAP::denoise(Settings& s) {
     this->cached_positions = vertices;
 }
 
-void ARAP::simplify(Settings& s) {
-    std::string dirPath = s.meshPath.substr(0, s.meshPath.rfind(".")) + "/";
-    mesh.simplify(s.simplifyTarget, dirPath);
+void ARAP::simplify(Settings& settings) {
+    std::string dirPath = settings.meshPath.substr(0, settings.meshPath.rfind(".")) + "/";
+    mesh.simplify(settings.simplifyTarget, dirPath);
 
     const vector<Vector3f>& vertices = mesh.getVertices();
     const vector<Vector3i>& faces = mesh.getFaces();
 
-    m_shape.init(vertices, faces);
+    vector<Vector3f> vertexColors; vertexColors.reserve(vertices.size());
+    for(int i = 0; i < vertices.size(); i++) {
+        auto& color = settings.orientationGroups[this->mesh.getOrientationGroup(i)]->color;
+        vertexColors.push_back({color.redF(), color.greenF(), color.blueF()});
+    }
+
+    m_shape.init(vertices, faces, vertexColors);
 
     computeAdjacency();
     this->remap = vector<int>(vertices.size());
@@ -636,14 +665,20 @@ void ARAP::simplify(Settings& s) {
     this->cached_positions = vertices;
 }
 
-bool ARAP::expand(int toLevel, Settings& s) {
+bool ARAP::expand(int toLevel, Settings& settings) {
     if(mesh.expand(toLevel)) {
         this->modified = true;
 
         const vector<Vector3f>& vertices = mesh.getVertices();
         const vector<Vector3i>& faces = mesh.getFaces();
 
-        m_shape.init(vertices, faces);
+        vector<Vector3f> vertexColors; vertexColors.reserve(vertices.size());
+        for(int i = 0; i < vertices.size(); i++) {
+            auto& color = settings.orientationGroups[this->mesh.getOrientationGroup(i)]->color;
+            vertexColors.push_back({color.redF(), color.greenF(), color.blueF()});
+        }
+
+        m_shape.init(vertices, faces, vertexColors);
         computeAdjacency();
         this->remap = vector<int>(vertices.size());
         this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());

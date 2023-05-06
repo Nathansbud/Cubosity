@@ -41,9 +41,16 @@ void Shape::uninit() {
     }
 
     m_vertices.clear();
+    m_vertexColors.clear();
 }
 
-void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &triangles, const vector<Vector2f> &uvCords, const string texture) {
+void Shape::init(
+    const vector<Vector3f> &vertices,
+    const vector<Vector3i> &triangles,
+    const vector<Vector2f> &uvCords,
+    const vector<Vector3f> &vertexColors,
+    const string texture
+) {
     m_textured = true;
 
     m_image = QImage(QString(texture.data()));
@@ -72,17 +79,20 @@ void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &trian
     // Unbind texture
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    init(vertices, triangles, uvCords);
+    init(vertices, triangles, uvCords, vertexColors);
 }
 
-void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &triangles)
-{
-    init(vertices, triangles, vector<Vector2f>(vertices.size(), { 0.f, 0.f }));
+void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &triangles, const vector<Vector3f> &vertexColors) {
+    init(vertices, triangles, vector<Vector2f>(vertices.size(), { 0.f, 0.f }), vertexColors);
 }
 
 
-void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &triangles, const vector<Vector2f> &uvCords)
-{
+void Shape::init(
+    const vector<Vector3f> &vertices,
+    const vector<Vector3i> &triangles,
+    const vector<Vector2f> &uvCords,
+    const vector<Vector3f> &vertexColors
+) {
     if (m_initialized) {
         uninit();
     }
@@ -91,7 +101,10 @@ void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &trian
     m_initialized = true;
 
     m_vertices.clear();
+    m_vertexColors.clear();
+
     copy(vertices.begin(), vertices.end(), back_inserter(m_vertices));
+    copy(vertexColors.begin(), vertexColors.end(), back_inserter(m_vertexColors));
 
     vector<Vector3f> verts;
     vector<Vector3f> normals;
@@ -103,7 +116,7 @@ void Shape::init(const vector<Vector3f> &vertices, const vector<Vector3i> &trian
     faces.reserve(triangles.size());
 
     for (int s = 0; s < triangles.size() * 3; s+=3) faces.push_back(Vector3i(s, s + 1, s + 2));
-    updateMesh(triangles, vertices, uvCords, verts, normals, colors, uv);
+    updateMesh(triangles, vertices, uvCords, vertexColors, verts, normals, colors, uv);
 
     glGenBuffers(1, &m_surfaceVbo);
     glGenBuffers(1, &m_surfaceIbo);
@@ -157,7 +170,7 @@ void Shape::setVertices(const vector<Vector3f> &vertices)
     vector<Vector3f> colors;
     vector<Vector2f> uv;
 
-    updateMesh(m_faces, vertices, m_uv, verts, normals, colors, uv);
+    updateMesh(m_faces, vertices, m_uv, m_vertexColors, verts, normals, colors, uv);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_surfaceVbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3) + (uv.size() * 2)), nullptr, GL_DYNAMIC_DRAW);
@@ -308,7 +321,7 @@ void Shape::selectHelper()
     vector<Vector3f> normals;
     vector<Vector3f> colors;
     vector<Vector2f> uv;
-    updateMesh(m_faces, m_vertices, m_uv, verts, normals, colors, uv);
+    updateMesh(m_faces, m_vertices, m_uv, m_vertexColors, verts, normals, colors, uv);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_surfaceVbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3) + (uv.size() * 2)), nullptr, GL_DYNAMIC_DRAW);
@@ -331,14 +344,16 @@ Vector3f Shape::getNormal(const Vector3i& face)
     return n.normalized();
 }
 
-void Shape::updateMesh(const std::vector<Eigen::Vector3i> &faces,
-                       const std::vector<Eigen::Vector3f> &vertices,
-                       const std::vector<Eigen::Vector2f> &uv_cords,
-                       std::vector<Eigen::Vector3f>& verts,
-                       std::vector<Eigen::Vector3f>& normals,
-                       std::vector<Eigen::Vector3f>& colors,
-                       std::vector<Eigen::Vector2f>& uv)
-{
+void Shape::updateMesh(
+    const std::vector<Eigen::Vector3i> &faces,
+    const std::vector<Eigen::Vector3f> &vertices,
+    const std::vector<Eigen::Vector2f> &uv_cords,
+    const std::vector<Eigen::Vector3f> &vertexColors,
+    std::vector<Eigen::Vector3f>& verts,
+    std::vector<Eigen::Vector3f>& normals,
+    std::vector<Eigen::Vector3f>& colors,
+    std::vector<Eigen::Vector2f>& uv
+) {
     verts.reserve(faces.size() * 3);
     normals.reserve(faces.size() * 3);
 
@@ -352,9 +367,9 @@ void Shape::updateMesh(const std::vector<Eigen::Vector3i> &faces,
             verts.push_back(vertices[v]);
 
             if (m_anchors.find(v) == m_anchors.end()) {
-                colors.push_back(Vector3f(1,0,0));
+                colors.push_back(vertexColors[v]);
             } else {
-                colors.push_back(Vector3f(0, 1 - m_green, 1 - m_blue));
+                colors.push_back({0, 1 - m_green, 1 - m_blue});
             }
         }
     }

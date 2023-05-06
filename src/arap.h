@@ -90,7 +90,7 @@ public:
     ARAP();
 
     Mesh mesh;
-    void subdivide();
+    void subdivide(Settings&);
     void denoise(Settings&);
     void cubify(int iterations, Settings&);
     void simplify(Settings&);

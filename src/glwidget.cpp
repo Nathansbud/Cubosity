@@ -327,7 +327,7 @@ void GLWidget::expandAll() {
 }
 
 void GLWidget::subdivide() {
-    m_arap.subdivide();
+    m_arap.subdivide(settings);
 }
 
 void GLWidget::denoise() {
