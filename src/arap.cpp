@@ -690,3 +690,14 @@ bool ARAP::expand(int toLevel, Settings& settings) {
 
     return false;
 }
+
+void ARAP::updateVertexColors(Settings& settings) {
+    const int res = this->mesh.getVertices().size();
+    vector<Vector3f> vertexColors; vertexColors.reserve(res);
+    for(int i = 0; i < res; i++) {
+        auto& color = settings.orientationGroups[this->mesh.getOrientationGroup(i)]->color;
+        vertexColors.push_back({color.redF(), color.greenF(), color.blueF()});
+    }
+
+    this->m_shape.setVertexColors(vertexColors);
+}

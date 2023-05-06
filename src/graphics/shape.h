@@ -46,6 +46,7 @@ public:
         const std::vector<Eigen::Vector3f> &vertexColors);
 
     void setVertices(const std::vector<Eigen::Vector3f> &vertices);
+    void setVertexColors(const std::vector<Eigen::Vector3f> &vertexColors);
 
     void setModelMatrix(const Eigen::Affine3f &model);
 

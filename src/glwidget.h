@@ -30,6 +30,8 @@ public:
     void denoise();
     void cubify();
 
+    // Orientation group callback~
+    void updateVertexColors();
 
     Settings settings;
 private:

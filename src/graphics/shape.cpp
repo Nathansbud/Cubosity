@@ -181,6 +181,29 @@ void Shape::setVertices(const vector<Vector3f> &vertices)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+
+void Shape::setVertexColors(const vector<Vector3f> &vertexColors)
+{
+    m_vertexColors.clear();
+    copy(vertexColors.begin(), vertexColors.end(), back_inserter(m_vertexColors));
+
+    vector<Vector3f> verts;
+    vector<Vector3f> normals;
+    vector<Vector3f> colors;
+    vector<Vector2f> uv;
+
+    updateMesh(m_faces, m_vertices, m_uv, vertexColors, verts, normals, colors, uv);
+
+    glBindBuffer(GL_ARRAY_BUFFER, m_surfaceVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3) + (uv.size() * 2)), nullptr, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * verts.size() * 3, static_cast<const void *>(verts.data()));
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * verts.size() * 3, sizeof(float) * normals.size() * 3, static_cast<const void *>(normals.data()));
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3)), sizeof(float) * colors.size() * 3, static_cast<const void *>(colors.data()));
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * ((verts.size() * 3) + (normals.size() * 3) + (colors.size() * 3)), sizeof(float) * uv.size() * 2, static_cast<const void *>(uv.data()));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 // ================== Model Matrix
 
 void Shape::setModelMatrix(const Affine3f &model) { m_modelMatrix = model.matrix(); }

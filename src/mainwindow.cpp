@@ -78,7 +78,8 @@ MainWindow::MainWindow()
     orientBox->setLayout(orientLayout);
 
     addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
-    OrientationGroup* baseOrientation = new OrientationGroup(QColor::fromRgb(255, 0, 0));    
+
+    OrientationGroup* baseOrientation = new OrientationGroup(QColor::fromRgb(255, 0, 0));
 
     addOrientationGroup(baseOrientation);
     rotLayout->addWidget(orientBox);
@@ -112,6 +113,7 @@ void MainWindow::createOrientationGroup() {
 
 void MainWindow::addOrientationGroup(OrientationGroup* ng) {
     glWidget->settings.orientationGroups.insert({ng->groupID, ng});
+    connect(ng, &OrientationGroup::colorChanged, this, [&] { glWidget->updateVertexColors(); });
     orientLayout->addWidget(ng);
 }
 

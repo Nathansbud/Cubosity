@@ -48,13 +48,18 @@ public:
 
         connect(this->colorButton, &QPushButton::clicked, this, [&]() {
             QColor ret = QColorDialog::getColor();
-            this->colorButton->setStyleSheet(
-                QString("background-color: %1; border: none;").arg(ret.name())
-            );
+            if (ret.isValid()) {
+                this->colorButton->setStyleSheet(
+                    QString("background-color: %1; border: none;").arg(ret.name())
+                );
 
-            this->color = ret;
+                this->color = ret;
+                emit colorChanged();
+            }
         });
 
         this->groupID = nextID++;
     }
+signals:
+    void colorChanged();
 };

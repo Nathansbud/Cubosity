@@ -107,7 +107,7 @@ public:
     void computeCubeRotations(const auto& newVerts, Settings&);
     void computeSystem();
 
-    // ================== Students, If You Choose To Modify The Code Below, It's On You
+    void updateVertexColors(Settings&);
 
     int getClosestVertex(Eigen::Vector3f start, Eigen::Vector3f ray, float threshold)
     {
