@@ -47,7 +47,7 @@ public:
         this->addRow = new QPushButton("R+");
         this->removeRow = new QPushButton("R-");
 
-        this->lambda = UIUtil::makeDoubleSpinBox(0.01, 10, 0.01, 1.0, 2);
+        this->lambda = UIUtil::makeDoubleSpinBox(0, 10, 0.01, 1.0, 2);
         this->rotation = Matrix3d::Identity();
         this->rotInput = new MatrixInput(rotation, 3, 3);
 
