@@ -1,6 +1,7 @@
 #include "arap.h"
 #include "graphics/meshloader.h"
 #include "QtCore/qcommandlineparser.h"
+#include "OsqpEigen/OsqpEigen.h"
 
 #include <iostream>
 #include <set>
@@ -328,6 +329,14 @@ void ARAP::computeCubeRotations(const auto& newVerts, Settings& settings) {
             float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
             float EPSILON_RELATIVE = 1e-3f; // value specified in paper
 
+            Matrix<double, 4, 3> B {
+                { 1.0, 0.0, 1.0 },
+                { 0.0, 1.0, 1.0 },
+                { 1.0, 1.0, 0.0 },
+                { 1.0, 1.0, 1.0 },
+            };
+            int m = B.rows();
+
             // Z step
             // Shrinkage step can be solved with Sκ(a)=(a − κ)+ − (−a − κ)+.
             // credit: https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf
@@ -335,10 +344,67 @@ void ARAP::computeCubeRotations(const auto& newVerts, Settings& settings) {
             // k = lambda * area / rho
             // a = Ri * normal + u
             Vector3f prevZ = currentCubeData.z;
-            Vector3f a = R * vertexNormal + currentCubeData.u;
-            float k = LAMBDA * vertexArea / currentCubeData.rho;
-            currentCubeData.z = (a.array() - k).max(0.f) - (-a.array() - k).max(0.f);
+//            Vector3f a = R * vertexNormal + currentCubeData.u;
+//            float k = LAMBDA * vertexArea / currentCubeData.rho;
+//            currentCubeData.z = (a.array() - k).max(0.f) - (-a.array() - k).max(0.f);
 
+            // Z step with shape generalization
+            OsqpEigen::Solver solver;
+
+            SparseMatrix<double> P(3 + m, 3 + m);
+            P.reserve(VectorXi::Constant(4, 2));
+            P.insert(0, 0) = (double) currentCubeData.rho;
+            P.insert(1, 1) = (double) currentCubeData.rho;
+            P.insert(2, 2) = (double) currentCubeData.rho;
+
+            VectorXd q (3 + m);
+            VectorXd leftSide = -((double) currentCubeData.rho) * (R * vertexNormal + currentCubeData.u).cast<double>();
+            VectorXd rightSide = (double) (LAMBDA * vertexArea) * VectorXd::Ones(m);
+            q << leftSide, rightSide;
+
+            MatrixXd ADense(2*m, 3 + m);
+            ADense.block(0, 0, m, 3) = B;
+            ADense.block(m, 0, m, 3) = -B;
+            ADense.block(0, 3, m, m) = -MatrixXd::Identity(m, m);
+            ADense.block(m, 3, m, m) = -MatrixXd::Identity(m, m);
+
+            SparseMatrix<double> A(2*m, 3 + m);
+            vector<Triplet<double>> coefficients;
+            for (int i = 0; i < A.rows(); i++) {
+                for (int j = 0; j < A.cols(); j++) {
+                    if (ADense(i, j) == 0.f) {
+                        continue;
+                    }
+
+                    coefficients.push_back({ i, j, ADense(i, j)});
+                }
+            }
+            A.setFromTriplets(coefficients.begin(), coefficients.end());
+
+            VectorXd upperBound = VectorXd::Zero(2*m, 1);
+            VectorXd lowerBound = -(std::numeric_limits<double>::max() * VectorXd::Ones(2*m, 1));
+
+            solver.settings()->setVerbosity(false);
+            solver.data()->setNumberOfVariables(3 + m);
+            solver.data()->setHessianMatrix(P);
+            solver.data()->setGradient(q);
+
+            solver.data()->setNumberOfConstraints(2 * m);
+            solver.data()->setLinearConstraintsMatrix(A);
+            solver.data()->setLowerBound(lowerBound);
+            solver.data()->setUpperBound(upperBound);
+
+            if(!solver.initSolver()) {
+                std::cout << "AHH" << std::endl;
+            };
+
+            if (solver.solveProblem() != OsqpEigen::ErrorExitFlag::NoError) {
+                std::cout << "AHH 2" << std::endl;
+            };
+
+            Eigen::VectorXd QPSolution;
+            QPSolution = solver.getSolution();
+            currentCubeData.z = QPSolution.block(0, 0, 3, 1).cast<float>();
 
             // U step
             // u^k+1 = u^k + Ri * normal - z

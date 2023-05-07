@@ -22,6 +22,9 @@ find_package(Qt6 REQUIRED COMPONENTS OpenGL)
 find_package(Qt6 REQUIRED COMPONENTS OpenGLWidgets)
 find_package(Qt6 REQUIRED COMPONENTS Gui)
 
+# Find OSQP library and headers
+find_package(OsqpEigen REQUIRED)
+
 # Allows you to include files from within those directories, without prefixing their filepaths
 include_directories(src)
 include_directories(libs)
@@ -79,6 +82,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt::Widgets
     Qt::Xml
     StaticGLEW
+    OsqpEigen::OsqpEigen
 )
 
 # This allows you to `#include "Eigen/..."`
