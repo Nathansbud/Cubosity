@@ -25,6 +25,7 @@ private:
 
     QVBoxLayout* orientLayout;
     QPushButton* exitOrientationButton;
+    QPushButton* hideButton;
 
     void createOrientationGroup();
     void addOrientationGroup(OrientationGroup*);
@@ -60,4 +61,6 @@ private:
     // Debug Options
     void onAnimateCubingChecked(bool);
     void onAnimateExpandChecked(bool);
+
+    int orientationsHidden = false;
 };

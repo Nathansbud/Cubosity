@@ -31,7 +31,7 @@ MainWindow::MainWindow()
 
     hLayout->addLayout(vLayout);
     // Force ARAP frame to occupy maximum width
-    hLayout->addWidget(glWidget, 1);
+    hLayout->addWidget(glWidget, 2);
     hLayout->addLayout(rotLayout);
 
     this->setLayout(hLayout);
@@ -73,18 +73,38 @@ MainWindow::MainWindow()
     debugBox->setLayout(debugLayout);
     vLayout->addWidget(debugBox);
 
+
     QGroupBox* orientBox = new QGroupBox("Orientations");
 
     orientLayout = new QVBoxLayout();
     orientBox->setLayout(orientLayout);
 
     exitOrientationButton = addPushButton(orientLayout, "Exit Orientation Selection", &MainWindow::deactivateOrientationGroups);
-    addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
+    QPushButton* addGroupButton = addPushButton(orientLayout, "Add Group", &MainWindow::createOrientationGroup);
 
     OrientationGroup* baseOrientation = new OrientationGroup(QColor::fromRgb(255, 0, 0));
 
     addOrientationGroup(baseOrientation);
     rotLayout->addWidget(orientBox);
+
+    hideButton = addPushButton(debugLayout, "Hide Orientations", [=] {
+        if(!orientationsHidden) {
+            hLayout->removeItem(rotLayout);
+            orientBox->hide();
+            exitOrientationButton->hide();
+            addGroupButton->hide();
+            hideButton->setText("Show Orientations");
+        } else {
+            orientBox->show();
+            exitOrientationButton->show();
+            addGroupButton->show();
+            hLayout->addLayout(rotLayout);
+            hideButton->setText("Hide Orientations");
+        }
+
+        orientationsHidden = !orientationsHidden;
+    });
+
 
     this->showFullScreen();
 }
