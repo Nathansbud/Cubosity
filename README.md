@@ -1,5 +1,23 @@
 # Cubosity
 
+A beautiful beautiful CSCI 2240 final project based on [Cubic Stylization](https://www.dgp.toronto.edu/projects/cubic-stylization/) (Liu & Jacobson, 2019), implemented by one Zack Amiton & [Stewart Morris](https://github.com/stew2003)
+
+## Installation
+
+## glew
+
+TODO
+
+## OSQP
+
+Polyhedral generalization uses [OSQP](https://osqp.org/docs/) as its quadratic solver. We use the [osqp-eigen](https://github.com/robotology/osqp-eigen) wrapper for easy Eigen compatibility; both can be installed via conda by running
+
+`conda install -c conda-forge osqp-eigen`
+
+though more complete installation instructions can be found on the package websites.
+
+## Setup
+
 ## Formats
 
 Collapse sequences are stored in `.stamp` files, which have the following structure:
