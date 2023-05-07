@@ -221,8 +221,9 @@ void HalfEdge::toVerts(
 ) {
     vertices.clear();
     faces.clear();
+
     indexTo.faces.clear();
-    indexTo.vertices.clear();
+    indexTo.vindexToVIDs.clear();
 
     std::unordered_set<Face*> foundFaces;
     std::unordered_map<Vertex*, int> vertexToIndex;
@@ -241,7 +242,12 @@ void HalfEdge::toVerts(
             vert1 = vIndex;
             vertexToIndex[halfEdge->vertex] = vIndex;
             vertices.push_back(halfEdge->vertex->point);
-            indexTo.vertices.insert({vIndex++, {halfEdge->vertex->vid, 0}});
+
+            int VID1 = halfEdge->vertex->vid;
+            indexTo.vindexToVIDs.insert({vIndex++, VID1});
+            if(!indexTo.vidToProperties.contains(VID1)) {
+                indexTo.vidToProperties[VID1] = {.orientationGroup = 0};
+            }
         }
 
         if (vertexToIndex.contains(halfEdge->next->vertex)) {
@@ -250,7 +256,12 @@ void HalfEdge::toVerts(
             vert2 = vIndex;
             vertexToIndex[halfEdge->next->vertex] = vIndex;
             vertices.push_back(halfEdge->next->vertex->point);
-            indexTo.vertices.insert({vIndex++, {halfEdge->next->vertex->vid, 0}});
+
+            int VID2 = halfEdge->next->vertex->vid;
+            indexTo.vindexToVIDs.insert({vIndex++, VID2});
+            if(!indexTo.vidToProperties.contains(VID2)) {
+                indexTo.vidToProperties[VID2] = {.orientationGroup = 0};
+            }
         }
 
         if (vertexToIndex.contains(halfEdge->next->next->vertex)) {
@@ -259,7 +270,12 @@ void HalfEdge::toVerts(
             vert3 = vIndex;
             vertexToIndex[halfEdge->next->next->vertex] = vIndex;
             vertices.push_back(halfEdge->next->next->vertex->point);
-            indexTo.vertices.insert({vIndex++, {halfEdge->next->next->vertex->vid, 0}});
+
+            int VID3 = halfEdge->next->next->vertex->vid;
+            indexTo.vindexToVIDs.insert({vIndex++, VID3});
+            if(!indexTo.vidToProperties.contains(VID3)) {
+                indexTo.vidToProperties[VID3] = {.orientationGroup = 0};
+            }
         }
 
         faces.push_back(Eigen::Vector3i{vert1, vert2, vert3});

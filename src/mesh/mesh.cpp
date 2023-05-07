@@ -19,17 +19,14 @@ void Mesh::initFromVectors(const vector<Vector3f> &vertices, const vector<Vector
     _faces    = faces;
 
     HalfEdge::fromVerts(_vertices, _faces, _halfEdges, _geometry);
-    cout << "Max IDs: "
-         << _geometry.bounds.VID_MAX << "V, "
-         << _geometry.bounds.FID_MAX << "F, "
-         << _geometry.bounds.EID_MAX << "E" << endl;
+    update();
 }
 
 void Mesh::updatePositions(const vector<Vector3f>& vertices) {
     std::cout << _geometry.vertices.size() << std::endl;
 
     for (int i = 0; i < vertices.size(); i++) {
-        _geometry.vertices[_indices.vertices[i].VID]->point = vertices[i];
+        _geometry.vertices[_indices.vindexToVIDs[i]]->point = vertices[i];
     }
 }
 

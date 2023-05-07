@@ -115,7 +115,14 @@ void MainWindow::createOrientationGroup() {
 
 void MainWindow::addOrientationGroup(OrientationGroup* ng) {
     glWidget->settings.orientationGroups.insert({ng->groupID, ng});
-    connect(ng, &OrientationGroup::colorChanged, this, [&] { glWidget->updateVertexColors(); });
+    connect(ng, &OrientationGroup::colorChanged, this, [&] {
+        if(glWidget->settings.activeGroup != -1) {
+            exitOrientationButton->setStyleSheet(
+                QString("border: 2px solid %1;").arg(glWidget->settings.orientationGroups[glWidget->settings.activeGroup]->color.name())
+            );
+        }
+        glWidget->updateVertexColors();
+    });
     connect(ng, &OrientationGroup::makeActive, this, [&](int groupID) {
         glWidget->settings.activeGroup = groupID;
         exitOrientationButton->setText(QString("Exit Orientation Selection [Group %1]").arg(groupID));

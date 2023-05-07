@@ -110,7 +110,10 @@ public:
     void computeSystem();
 
     void updateVertexColors(Settings&);
-    void updateOrientationGroup(int vIndex, int groupID) { this->mesh.setOrientationGroup(vIndex, groupID); }
+    void updateOrientationGroup(int vIndex, int groupID, Settings& s)  {
+        this->mesh.setOrientationGroup(vIndex, groupID);
+        updateVertexColors(s);
+    }
 
     int getClosestVertex(Eigen::Vector3f start, Eigen::Vector3f ray, float threshold)
     {

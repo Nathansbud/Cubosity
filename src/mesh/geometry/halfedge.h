@@ -38,12 +38,12 @@ namespace HalfEdge {
     };
 
     struct VertexProperties {
-        int VID;
         int orientationGroup;
     };
 
     struct IndexMap {
-        std::map<int, VertexProperties> vertices;
+        std::map<int, VertexProperties> vidToProperties;
+        std::map<int, int> vindexToVIDs;
         std::map<int, int> faces;
     };
 

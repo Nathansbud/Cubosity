@@ -97,7 +97,6 @@ void Shape::init(
         uninit();
     }
 
-
     m_initialized = true;
 
     m_vertices.clear();

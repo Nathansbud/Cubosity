@@ -195,8 +195,8 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
         // Capture
         m_rightCapture = true;
         // Anchor/un-anchor the vertex
-        if(settings.activeGroup != -1) {
-            m_arap.updateOrientationGroup(closest_vertex, settings.activeGroup);
+        if(settings.activeGroup != -1 && closest_vertex != -1) {
+            m_arap.updateOrientationGroup(closest_vertex, settings.activeGroup, settings);
         } else {
             m_rightClickSelectMode = m_arap.select(m_pointShader, closest_vertex);
         }
@@ -238,7 +238,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
         const int closest_vertex = m_arap.getClosestVertex(m_camera.getPosition(), ray, m_vertexSelectionThreshold);
         if(settings.activeGroup != -1) {
             if(closest_vertex != -1) {
-                m_arap.updateOrientationGroup(closest_vertex, settings.activeGroup);
+                m_arap.updateOrientationGroup(closest_vertex, settings.activeGroup, settings);
             }
         } else {
             // Anchor/un-anchor the vertex
