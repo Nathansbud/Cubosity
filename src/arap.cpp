@@ -596,8 +596,6 @@ void ARAP::move(int vertex, Vector3f targetPosition) {
 }
 
 void ARAP::cubify(int iters, Settings& settings) {
-    const vector<Vector3f>& vertices = mesh.getVertices();
-
     std::vector<Eigen::Vector3f> new_vertices = m_shape.getVertices();
     const std::unordered_set<int>& anchors = m_shape.getAnchors();
 
@@ -723,6 +721,7 @@ void ARAP::simplify(Settings& settings) {
     this->remap = vector<int>(vertices.size());
     this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
     this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+    this->cubeData = vector<CubeData>(vertices.size(), CubeData{});
     this->cached_positions = vertices;
 }
 
@@ -744,6 +743,7 @@ bool ARAP::expand(int toLevel, Settings& settings) {
         this->remap = vector<int>(vertices.size());
         this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
         this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
+        this->cubeData = vector<CubeData>(vertices.size(), CubeData{});
         this->cached_positions = vertices;
         this->precompute();
         return true;
