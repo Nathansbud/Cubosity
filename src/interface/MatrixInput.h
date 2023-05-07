@@ -12,7 +12,7 @@ class MatrixInput : public QTableWidget
 {
     Q_OBJECT
 public:
-    MatrixInput(MatrixXf& matrix, int rows, int cols, QWidget *parent = nullptr) {
+    MatrixInput(MatrixXd& matrix, int rows, int cols, QWidget *parent = nullptr) {
         this->setRowCount(rows);
         this->setColumnCount(cols);
         this->verticalHeader()->setVisible(false);
@@ -24,12 +24,14 @@ public:
                 QLineEdit* cell = new QLineEdit;
                 cell->setText(QString::number(matrix(r, c)));
                 cell->setValidator(new QDoubleValidator(cell));
+                connect(cell, &QLineEdit::textChanged, this, [=](auto) {
+                   emit cellModified(r, c);
+                });
+
                 this->setCellWidget(r, c, cell);
             }
         }
-
-        connect(this, &QTableWidget::cellChanged, this, [&](int r, int c) {
-            matrix(r, c) = this->item(r, c)->text().toFloat();
-        });
     }
+signals:
+    void cellModified(int r, int c);
 };

@@ -24,7 +24,7 @@ public:
 
     MatrixInput* rotInput;
 
-    Eigen::MatrixXf rotation;
+    Eigen::MatrixXd rotation;
 
     QColor color;
     int groupID;
@@ -41,7 +41,7 @@ public:
         this->addButton = new QPushButton("+");
 
         this->lambda = UIUtil::makeDoubleSpinBox(0.01, 10, 0.01, 1.0, 2);
-        this->rotation = Matrix3f::Identity();
+        this->rotation = Matrix3d::Identity();
         this->rotInput = new MatrixInput(rotation, 3, 3);
 
         this->contents = new QHBoxLayout();
@@ -62,6 +62,10 @@ public:
                 this->color = ret;
                 emit colorChanged();
             }
+        });
+
+        connect(this->rotInput, &MatrixInput::cellModified, this, [&](int r, int c) {
+            this->rotation(r, c) = static_cast<QLineEdit*>(this->rotInput->cellWidget(r, c))->text().toDouble();
         });
 
         this->groupID = nextID++;

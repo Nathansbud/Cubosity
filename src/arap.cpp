@@ -343,12 +343,7 @@ void ARAP::computeCubeRotations(const auto& newVerts, Settings& settings) {
             float EPSILON_ABSOLUTE = 1e-6f; // value specified in paper
             float EPSILON_RELATIVE = 1e-3f; // value specified in paper
 
-            Matrix<double, 4, 3> B {
-                { 1.0, 0.0, 1.0 },
-                { 0.0, 1.0, 1.0 },
-                { 1.0, 1.0, 0.0 },
-                { 1.0, 1.0, 1.0 },
-            };
+            MatrixXd B = settings.orientationGroups[this->mesh.getOrientationGroup(v)]->rotation;
             int m = B.rows();
 
             // Z step
