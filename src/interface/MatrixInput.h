@@ -32,6 +32,21 @@ public:
             }
         }
     }
+
+    void insertInputRow(int row) {
+        this->insertRow(row);
+        for(int i = 0; i < this->columnCount(); i++) {
+            QLineEdit* cell = new QLineEdit;
+            cell->setText((i == this->columnCount() - 1) ? "1" : "0");
+            cell->setValidator(new QDoubleValidator(cell));
+            connect(cell, &QLineEdit::textChanged, this, [=](auto) {
+               emit cellModified(row, i);
+            });
+
+            this->setCellWidget(row, i, cell);
+        }
+    }
+
 signals:
     void cellModified(int r, int c);
 };

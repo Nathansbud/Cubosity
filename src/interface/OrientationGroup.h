@@ -20,6 +20,10 @@ public:
     QHBoxLayout* contents;
     QPushButton* addButton;
     QPushButton* colorButton;
+
+    QPushButton* addRow;
+    QPushButton* removeRow;
+
     QDoubleSpinBox* lambda;
 
     MatrixInput* rotInput;
@@ -40,6 +44,9 @@ public:
 
         this->addButton = new QPushButton("+");
 
+        this->addRow = new QPushButton("R+");
+        this->removeRow = new QPushButton("R-");
+
         this->lambda = UIUtil::makeDoubleSpinBox(0.01, 10, 0.01, 1.0, 2);
         this->rotation = Matrix3d::Identity();
         this->rotInput = new MatrixInput(rotation, 3, 3);
@@ -49,6 +56,8 @@ public:
         this->contents->addWidget(colorButton);
         this->contents->addWidget(lambda);
         this->contents->addWidget(rotInput);
+        this->contents->addWidget(addRow);
+        this->contents->addWidget(removeRow);
         this->setLayout(contents);
 
         connect(this->addButton, &QPushButton::clicked, this, [&]() { emit makeActive(this->groupID); });
@@ -66,6 +75,19 @@ public:
 
         connect(this->rotInput, &MatrixInput::cellModified, this, [&](int r, int c) {
             this->rotation(r, c) = static_cast<QLineEdit*>(this->rotInput->cellWidget(r, c))->text().toDouble();
+        });
+
+        connect(this->addRow, &QPushButton::clicked, this, [&] {
+            this->rotation.conservativeResize(this->rotation.rows() + 1, Eigen::NoChange);
+            this->rotation.row(this->rotation.rows() - 1) << 0, 0, 1;
+            this->rotInput->insertInputRow(this->rotation.rows() - 1);
+        });
+
+        connect(this->removeRow, &QPushButton::clicked, this, [&] {
+            if(this->rotation.rows() > 3) {
+                this->rotation.conservativeResize(this->rotation.rows() - 1, Eigen::NoChange);
+                this->rotInput->removeRow(this->rotation.rows());
+            }
         });
 
         this->groupID = nextID++;
