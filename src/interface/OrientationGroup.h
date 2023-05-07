@@ -40,7 +40,7 @@ public:
 
         this->addButton = new QPushButton("+");
 
-        this->lambda = UIUtil::makeDoubleSpinBox(0.01, 10, 0.01, 1.0, 2);
+        this->lambda = UIUtil::makeDoubleSpinBox(0.0, 10, 0.01, 1.0, 2);
         this->rotation = Matrix3f::Identity();
         this->rotInput = new MatrixInput(rotation, 3, 3);
 
