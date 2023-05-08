@@ -61,6 +61,7 @@ private:
     // Debug Options
     void onAnimateCubingChecked(bool);
     void onAnimateExpandChecked(bool);
+    void onSaveMeshClicked();
 
     int orientationsHidden = false;
 };

@@ -18,8 +18,8 @@ public:
                              const std::vector<Eigen::Vector3f> &vertices,
                              const std::vector<Eigen::Vector3i> &faces);
 
+    void saveMesh(const std::string &outputPath);
     void saveProgressiveMesh(const std::string &outputDir);
-
 
     void subdivide();
     void denoise(const float DIST_THRESH, const float SIGMA_C, const float SIGMA_S);

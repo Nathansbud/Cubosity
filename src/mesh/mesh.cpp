@@ -288,6 +288,40 @@ bool Mesh::loadProgressiveMesh(const string &stampPath,
     return true;
 }
 
+void Mesh::saveMesh(const string &outputPath) {
+    ofstream outfile;
+    outfile.open(outputPath);
+
+    std::map<int, int> outputVertices;
+
+    int VOUT = 0;
+    for(auto [VID, vertexPtr] : _geometry.vertices) {
+        if(!vertexPtr) continue;
+        Vector3f& v = vertexPtr->point;
+        outfile << "v " << v[0] << " " << v[1] << " " << v[2] << endl;
+
+        // Output the vertex ID that our mesh corresponds with!
+        outputVertices.insert({VID, VOUT++});
+    }
+
+    int FOUT = 0;
+    for(auto [FID, facePtr] : _geometry.faces) {
+        if(!facePtr) continue;
+
+        HalfEdge::HalfEdge* hedge = facePtr->halfEdge;
+        int V1, V2, V3;
+
+        V1 = hedge->vertex->vid;
+        V2 = hedge->next->vertex->vid;
+        V3 = hedge->next->next->vertex->vid;
+
+        outfile << "f " << (outputVertices[V1] + 1) << " "
+                        << (outputVertices[V2] + 1) << " "
+                        << (outputVertices[V3] + 1) << endl;
+    }
+
+    outfile.close();
+}
 
 void Mesh::saveProgressiveMesh(const string &outputDir) {
     filesystem::path outDir = filesystem::path(outputDir);

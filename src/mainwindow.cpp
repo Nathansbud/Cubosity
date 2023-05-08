@@ -16,6 +16,7 @@
 #include <QGroupBox>
 #include <QColorDialog>
 #include <QRandomGenerator>
+#include <QFileDialog>
 
 void placeholder() {}
 MainWindow::MainWindow()
@@ -67,6 +68,7 @@ MainWindow::MainWindow()
     QGroupBox* debugBox = new QGroupBox("Debug Controls");
     QVBoxLayout* debugLayout = new QVBoxLayout();
 
+    addPushButton(debugLayout, "Save Mesh", &MainWindow::onSaveMeshClicked);
     addCheckBox(debugLayout, "Animate Cubing? ", glWidget->settings.animateCubing, &MainWindow::onAnimateCubingChecked);
     addCheckBox(debugLayout, "Animate Expanding? ", glWidget->settings.animateExpand, &MainWindow::onAnimateExpandChecked);
 
@@ -163,6 +165,14 @@ void MainWindow::deactivateOrientationGroups() {
 
 void MainWindow::onAnimateCubingChecked(bool b) { glWidget->settings.animateCubing = b; }
 void MainWindow::onAnimateExpandChecked(bool b) { glWidget->settings.animateExpand = b; }
+void MainWindow::onSaveMeshClicked() {
+    QString fileName = QFileDialog::getSaveFileName(this, "Save Mesh", "mesh.obj", "Mesh File (*.obj)");
+    if (fileName.isEmpty()) {
+        return; // user canceled the dialog
+    }
+
+    glWidget->saveMesh(fileName.toStdString());
+}
 
 void MainWindow::addHeading(QBoxLayout* layout, QString text) {
     QFont font;
