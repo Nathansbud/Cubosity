@@ -31,6 +31,7 @@ public:
     void cubify();
 
     void saveMesh(const std::string& filePath) { m_arap.saveMesh(filePath); };
+    void clearActiveGroup();
 
     // Orientation group callback~
     void updateVertexColors();

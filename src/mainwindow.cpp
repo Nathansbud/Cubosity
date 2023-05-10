@@ -17,6 +17,7 @@
 #include <QColorDialog>
 #include <QRandomGenerator>
 #include <QFileDialog>
+#include <QComboBox>
 
 void placeholder() {}
 MainWindow::MainWindow()
@@ -107,6 +108,13 @@ MainWindow::MainWindow()
         orientationsHidden = !orientationsHidden;
     });
 
+    addPushButton(debugLayout, "Clear Active Orientation", &MainWindow::onClearActiveClicked);
+
+    QGroupBox* setOrientationBox = new QGroupBox("Orientations");
+    QHBoxLayout* setOrientationLayout = new QHBoxLayout();
+    addPushButton(setOrientationLayout, "Set Basis", &MainWindow::onSetOrientationClicked);
+    setOrientationBox->setLayout(setOrientationLayout);
+    debugLayout->addWidget(setOrientationBox);
 
     this->showFullScreen();
 }
@@ -172,6 +180,10 @@ void MainWindow::onSaveMeshClicked() {
     }
 
     glWidget->saveMesh(fileName.toStdString());
+}
+void MainWindow::onClearActiveClicked() { glWidget->clearActiveGroup(); }
+void MainWindow::onSetOrientationClicked() {
+
 }
 
 void MainWindow::addHeading(QBoxLayout* layout, QString text) {

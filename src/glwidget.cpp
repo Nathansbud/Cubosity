@@ -353,6 +353,7 @@ void GLWidget::cubify() {
 }
 
 void GLWidget::updateVertexColors() { this->m_arap.updateVertexColors(settings); }
+void GLWidget::clearActiveGroup() { this->m_arap.clearActiveGroup(settings); }
 
 // ================== Physics Tick
 

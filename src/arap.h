@@ -110,11 +110,14 @@ public:
     void computeCubeRotations(const auto& newVerts, Settings&);
     void computeSystem();
 
+
     void updateVertexColors(Settings&);
     void updateOrientationGroup(int vIndex, int groupID, Settings& s)  {
         this->mesh.setOrientationGroup(vIndex, groupID);
         updateVertexColors(s);
     }
+
+    void clearActiveGroup(Settings&);
 
     int getClosestVertex(Eigen::Vector3f start, Eigen::Vector3f ray, float threshold)
     {

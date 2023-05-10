@@ -466,6 +466,10 @@ void ARAP::getPerVertexInfo() {
     this->areas.clear();
     this->areas.resize(this->cached_positions.size());
 
+    for(int i = 0; i < faces.size(); i++) {
+        std::cout << getFaceNormal(faces[i]) << std::endl;
+    }
+
     for (int vert = 0; vert < this->cached_positions.size(); vert++) {
          std::vector<int>& adjacentFaces = this->faceAdj[vert];
          Vector3f vertexNormal = Vector3f::Zero();
@@ -751,6 +755,24 @@ bool ARAP::expand(int toLevel, Settings& settings) {
     }
 
     return false;
+}
+
+void ARAP::clearActiveGroup(Settings& settings) {
+    if(settings.activeGroup != -1) {
+        const int res = this->mesh.getVertices().size();
+        vector<Vector3f> vertexColors; vertexColors.reserve(res);
+
+        for(int i = 0; i < res; i++) {
+            if(this->mesh.getOrientationGroup(i) == settings.activeGroup) {
+                this->mesh.setOrientationGroup(i, 0);
+            }
+
+            auto& color = settings.orientationGroups[this->mesh.getOrientationGroup(i)]->color;
+            vertexColors.push_back({color.redF(), color.greenF(), color.blueF()});
+        }
+
+        this->m_shape.setVertexColors(vertexColors);
+    }
 }
 
 void ARAP::updateVertexColors(Settings& settings) {
