@@ -34,6 +34,8 @@ public:
         m_arap.mesh.saveMesh(filePath);
     };
 
+    void reset();
+
     // Orientation group callback~
     void updateVertexColors();
 

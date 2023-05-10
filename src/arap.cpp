@@ -657,7 +657,7 @@ void ARAP::cubify(int iters, Settings& settings) {
 //    this->remap = vector<int>(vertices.size());
 //    this->W = SparseMatrix<float>(this->adj.size(), this->adj.size());
 //    this->rotations = vector<Matrix3f>(vertices.size(), Matrix3f::Identity());
-//    this->cached_positions = vertices;
+//    this->cached_positions = new_vertices;
 }
 
 void ARAP::subdivide(Settings& settings) {

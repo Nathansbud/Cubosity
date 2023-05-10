@@ -62,6 +62,7 @@ private:
     void onAnimateCubingChecked(bool);
     void onAnimateExpandChecked(bool);
     void onSaveMeshClicked();
+    void onResetClicked();
 
     int orientationsHidden = false;
 };

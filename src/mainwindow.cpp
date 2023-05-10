@@ -69,6 +69,7 @@ MainWindow::MainWindow()
     QVBoxLayout* debugLayout = new QVBoxLayout();
 
     addPushButton(debugLayout, "Save Mesh", &MainWindow::onSaveMeshClicked);
+    addPushButton(debugLayout, "Reset", &MainWindow::onResetClicked);
     addCheckBox(debugLayout, "Animate Cubing? ", glWidget->settings.animateCubing, &MainWindow::onAnimateCubingChecked);
     addCheckBox(debugLayout, "Animate Expanding? ", glWidget->settings.animateExpand, &MainWindow::onAnimateExpandChecked);
 
@@ -172,6 +173,9 @@ void MainWindow::onSaveMeshClicked() {
     }
 
     glWidget->saveMesh(fileName.toStdString());
+}
+void MainWindow::onResetClicked() {
+    glWidget->reset();
 }
 
 void MainWindow::addHeading(QBoxLayout* layout, QString text) {
