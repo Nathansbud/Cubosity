@@ -1303,7 +1303,8 @@ void HalfEdge::simplify(
         };
 
         geometry.vertices[shiftedVert->vid] = ci.collapsedVertex;
-        geometry.vertices[deletedVert->vid] = nullptr;
+        geometry.vertices.erase(deletedVert->vid);
+        //geometry.vertices[deletedVert->vid] = nullptr;
 
         delete shiftedVert;
         delete deletedVert;
@@ -1319,7 +1320,10 @@ void HalfEdge::simplify(
         cr.removedEID = removedEdge->eid;
         cr.shiftedEID = shiftedEdge->eid;
 
-        for(const Edge* e : ci.deletedEdges) geometry.edges[e->eid] = nullptr;
+        for(const Edge* e : ci.deletedEdges) {
+            //geometry.edges[e->eid] = nullptr;
+            geometry.edges.erase(e->eid);
+        }
 
         delete collapsedEdge;
         delete shiftedEdge;
@@ -1331,7 +1335,10 @@ void HalfEdge::simplify(
         cr.topFID = topFace->fid;
         cr.bottomFID = bottomFace->fid;
 
-        for(const Face* f : ci.deletedFaces) geometry.faces[f->fid] = nullptr;
+        for(const Face* f : ci.deletedFaces) {
+//            geometry.faces[f->fid] = nullptr;
+            geometry.faces.erase(f->fid);
+        }
 
         delete topFace;
         delete bottomFace;

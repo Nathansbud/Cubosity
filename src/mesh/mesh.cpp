@@ -28,6 +28,8 @@ void Mesh::updatePositions(const vector<Vector3f>& vertices) {
     for (int i = 0; i < vertices.size(); i++) {
         _geometry.vertices[_indices.vindexToVIDs[i]]->point = vertices[i];
     }
+
+    _vertices = vertices;
 }
 
 std::optional<int> toInt(std::string& str) {

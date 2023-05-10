@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <filesystem>
+#include <fstream>
 
 using namespace std;
 using namespace Eigen;
@@ -607,7 +608,7 @@ void ARAP::cubify(int iters, Settings& settings) {
         }
     }
 
-    std::cout << "Estimate has " << estimate.rows() << " rows" << std::endl;
+//    std::cout << "Estimate has " << estimate.rows() << " rows" << std::endl;
 
     for (int iterations = 0; iterations < iters; iterations++) {
         computeCubeRotations(estimate, settings);
@@ -761,4 +762,30 @@ void ARAP::updateVertexColors(Settings& settings) {
     }
 
     this->m_shape.setVertexColors(vertexColors);
+}
+
+void ARAP::saveMesh(const std::string& filePath) {
+    ofstream outfile;
+    outfile.open(filePath);
+
+    std::map<int, int> outputVertices;
+
+    const auto& verts = m_shape.getVertices();
+    const auto& faces = m_shape.getFaces();
+
+    for(int i = 0; i < verts.size(); i++) {
+        const Eigen::Vector3f& v = verts[i];
+        outfile << "v " << v[0] << " " << v[1] << " " << v[2] << endl;
+    }
+
+    for(int i = 0; i < faces.size(); i++) {
+        const Vector3i& f = faces[i];
+        int V1 = f[0];
+        int V2 = f[1];
+        int V3 = f[2];
+
+        outfile << "f " << V1 + 1 << " " << V2 + 1 << " " << V3 + 1 << endl;
+    }
+
+    outfile.close();
 }

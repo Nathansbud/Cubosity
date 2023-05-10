@@ -101,6 +101,7 @@ public:
     void init(Eigen::Vector3f &min, Eigen::Vector3f &max, Settings&);
     void computeAdjacency();
     void move(int vertex, Eigen::Vector3f pos);
+    void saveMesh(const std::string& filePath);
 
     // update sparse matrix L and corresponding decomp
     void precompute();

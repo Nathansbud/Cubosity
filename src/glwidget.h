@@ -30,9 +30,7 @@ public:
     void denoise();
     void cubify();
 
-    void saveMesh(const std::string& filePath) {
-        m_arap.mesh.saveMesh(filePath);
-    };
+    void saveMesh(const std::string& filePath) { m_arap.saveMesh(filePath); };
 
     // Orientation group callback~
     void updateVertexColors();
