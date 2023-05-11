@@ -45,6 +45,16 @@ public:
 
 
         presets.insert({0, {"Octahedron", octahedron}});
+
+        MatrixXd dodecahedron(6, 3);
+        dodecahedron << 0.850651, 0, 0.525731,
+                        0.850651, 1.23058e-07, -0.525731,
+                        -0.850651, 0, -0.525731,
+                        -0.850651, 1.23058e-07, 0.525731,
+                        -0.525731, 0.850651, -1.23058e-07,
+                        0.525731, 0.850651, 1.23058e-07;
+
+        presets.insert({1, {"Dodecahedron", dodecahedron}});
     }
 
     void setPreset(int preset) {
