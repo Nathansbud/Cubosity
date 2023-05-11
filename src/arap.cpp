@@ -466,9 +466,7 @@ void ARAP::getPerVertexInfo() {
     this->areas.clear();
     this->areas.resize(this->cached_positions.size());
 
-    for(int i = 0; i < faces.size(); i++) {
-        std::cout << getFaceNormal(faces[i]) << std::endl;
-    }
+//    for(int i = 0; i < faces.size(); i++) { std::cout << getFaceNormal(faces[i]) << std::endl; }
 
     for (int vert = 0; vert < this->cached_positions.size(); vert++) {
          std::vector<int>& adjacentFaces = this->faceAdj[vert];

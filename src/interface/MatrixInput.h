@@ -47,6 +47,13 @@ public:
         }
     }
 
+    void populateValues(MatrixXd& mat) {
+        for(int r = 0; r < mat.rows(); r++) {
+            for(int c = 0; c < mat.cols(); c++) {
+                static_cast<QLineEdit*>(this->cellWidget(r, c))->setText(QString::number(mat(r, c)));
+            }
+        }
+    }
 signals:
     void cellModified(int r, int c);
 };

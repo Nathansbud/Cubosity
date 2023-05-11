@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QBoxLayout>
 #include <QLabel>
+#include <QComboBox>
 #include "glwidget.h"
 
 class MainWindow : public QWidget
@@ -26,6 +27,7 @@ private:
     QVBoxLayout* orientLayout;
     QPushButton* exitOrientationButton;
     QPushButton* hideButton;
+    QComboBox* orientationPreset;
 
     void createOrientationGroup();
     void addOrientationGroup(OrientationGroup*);

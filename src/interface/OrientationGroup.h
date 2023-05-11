@@ -34,6 +34,34 @@ public:
     int groupID;
 
     inline static int nextID = 0;
+    inline static std::map<int, std::pair<std::string, MatrixXd>> presets;
+
+    static void populatePresets() {
+        MatrixXd octahedron(4, 3);
+        octahedron << 0.57735, -0.57735, 0.57735,
+                      -0.57735, -0.57735, 0.57735,
+                      -0.57735, 0.57735, 0.57735,
+                      0.57735, 0.57735, 0.57735;
+
+
+        presets.insert({0, {"Octahedron", octahedron}});
+    }
+
+    void setPreset(int preset) {
+        MatrixXd& newOrientation = presets[preset].second;
+        if(this->rotation.rows() < newOrientation.rows()) {
+            for(int i = 0; i < newOrientation.rows() - this->rotation.rows(); i++) {
+                this->rotInput->insertInputRow(this->rotation.rows() + i);
+            }
+        } else {
+            for(int i = 0; i < this->rotation.rows() - newOrientation.rows(); i++) {
+                this->rotInput->removeRow(this->rotation.rows() - i);
+            }
+        }
+
+        this->rotation = newOrientation;
+        this->rotInput->populateValues(this->rotation);
+    }
 
     OrientationGroup(QColor color, QWidget *parent = nullptr) {
         this->color = color;

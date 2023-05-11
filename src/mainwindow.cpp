@@ -112,6 +112,15 @@ MainWindow::MainWindow()
 
     QGroupBox* setOrientationBox = new QGroupBox("Orientations");
     QHBoxLayout* setOrientationLayout = new QHBoxLayout();
+
+    OrientationGroup::populatePresets();
+
+    orientationPreset = new QComboBox();
+    for(const auto& [idx, metadata] : OrientationGroup::presets) {
+        orientationPreset->addItem(QString::fromStdString(metadata.first));
+    }
+
+    setOrientationLayout->addWidget(orientationPreset);
     addPushButton(setOrientationLayout, "Set Basis", &MainWindow::onSetOrientationClicked);
     setOrientationBox->setLayout(setOrientationLayout);
     debugLayout->addWidget(setOrientationBox);
@@ -183,7 +192,9 @@ void MainWindow::onSaveMeshClicked() {
 }
 void MainWindow::onClearActiveClicked() { glWidget->clearActiveGroup(); }
 void MainWindow::onSetOrientationClicked() {
-
+    if(glWidget->settings.activeGroup != -1) {
+        glWidget->settings.orientationGroups[glWidget->settings.activeGroup]->setPreset(orientationPreset->currentIndex());
+    }
 }
 
 void MainWindow::addHeading(QBoxLayout* layout, QString text) {
