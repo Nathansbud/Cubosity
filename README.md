@@ -2,7 +2,7 @@
 
 ![](./images/README/cube-bunny.png)
 
-Cubosity is an implementation of [Cubic Stylization](https://www.dgp.toronto.edu/projects/cubic-stylization/) (Liu & Jacobson, 2019), created as a final project for the Spring 2023 offering of [CSCI 2240](https://cs2240.graphics/) by Zack Amiton & [Stewart Morris](https://github.com/stew2003).
+Cubosity (née Stamortack) is an implementation of [Cubic Stylization](https://www.dgp.toronto.edu/projects/cubic-stylization/) (Liu & Jacobson, 2019), created as a final project for the Spring 2023 offering of [CSCI 2240](https://cs2240.graphics/) by Zack Amiton & [Stewart Morris](https://github.com/stew2003).
 
 ## **Installation & Setup**
 
@@ -33,6 +33,8 @@ though more complete installation instructions can be found on the package websi
 <hr>
 
 ## **Usage**
+
+https://github.com/Nathansbud/Cubosity/assets/20943979/99d55ea3-6086-48df-ac06-13458acef775
 
 Cubosity operates on meshes in `.obj` format (as well as progressive meshes using a custom format detailed below); to run, pass in a mesh by running:
 
@@ -117,7 +119,3 @@ where `$Variables` are values, and uppercase letters are to help with parsing. `
 Passing in a progressive mesh directory will load the directory `.obj` file, and remap IDs as well as populate the collapse sequence using `.stamp` files (allowing low-resolution meshes to be generalized, then expanded to propogate modified geometry to high-resolution meshes).
 
 <hr>
-
-## Results
-
-TODO
