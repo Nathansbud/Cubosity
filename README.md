@@ -117,5 +117,3 @@ where `$Variables` are values, and uppercase letters are to help with parsing. `
 - `$Shifted` = `$ShiftedEID $ShiftedVertexVID $ShiftedVertex.X $ShiftedVertex.Y $ShiftedVertex.Z`
 
 Passing in a progressive mesh directory will load the directory `.obj` file, and remap IDs as well as populate the collapse sequence using `.stamp` files (allowing low-resolution meshes to be generalized, then expanded to propogate modified geometry to high-resolution meshes).
-
-<hr>
